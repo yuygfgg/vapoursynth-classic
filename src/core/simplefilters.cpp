@@ -2135,7 +2135,7 @@ static void VS_CC propToClipCreate(const VSMap *in, VSMap *out, void *userData, 
     if (!src)
         RETERROR(("PropToClip: upstream error: " + std::string(errmsg)).c_str());
 
-    const VSFrame *msrc = vsapi->mapGetFrame(vsapi->getFramePropertiesRO(src), tempprop, 0, &err);
+    const VSFrame *msrc = vsapi->mapGetFrame(vsapi->getFramePropertiesRO(src), d->prop.c_str(), 0, &err);
     if (err) {
         vsapi->freeFrame(src);
         RETERROR("PropToClip: no frame stored in property");

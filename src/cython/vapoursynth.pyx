@@ -440,7 +440,7 @@ def get_current_environment():
 # Create an empty list whose instance will represent a not passed value.
 _EMPTY = []
 
-VideoOutputTuple = namedtuple("VideoOutputTuple", "clip alpha alt_output")
+AlphaOutputTuple = namedtuple("AlphaOutputTuple", "clip alpha alt_output")
 
 def _construct_type(signature):
     type,*opt = signature.split(":")
@@ -1752,9 +1752,11 @@ cdef class VideoNode(RawNode):
             elif (self.vi.format.colorFamily != UNDEFINED) or (alpha.vi.format.colorFamily != UNDEFINED):
                 raise Error('Format must be either known or unknown for both alpha and main clip')
             
-            _get_output_dict("set_output")[index] = VideoOutputTuple(self, alpha, alt_output)
+            _get_output_dict("set_output")[index] = AlphaOutputTuple(self, alpha, alt_output)
+        elif alt_output != 0:
+            _get_output_dict("set_output")[index] = AlphaOutputTuple(self, None, alt_output)
         else:
-            _get_output_dict("set_output")[index] = VideoOutputTuple(self, None, alt_output)
+            _get_output_dict("set_output")[index] = self
 
     def output(self, object fileobj not None, bint y4m = False, object progress_update = None, int prefetch = 0, int backlog = -1):
         if (fileobj is sys.stdout or fileobj is sys.stderr):
@@ -2897,7 +2899,7 @@ cdef public api VSNode *vpy4_getOutput(VSScript *se, int index) nogil:
         except:
             return NULL
 
-        if isinstance(node, VideoOutputTuple):
+        if isinstance(node, AlphaOutputTuple):
             node = node[0]
             
         if isinstance(node, RawNode):
@@ -2914,7 +2916,7 @@ cdef public api VSNode *vpy4_getAlphaOutput(VSScript *se, int index) nogil:
         except:
             return NULL
 
-        if isinstance(node, VideoOutputTuple):
+        if isinstance(node, AlphaOutputTuple):
             node = node[1]   
             if isinstance(node, RawNode):
                 return (<RawNode>node).funcs.addNodeRef((<RawNode>node).node)
@@ -2929,7 +2931,7 @@ cdef public api int vpy4_getAltOutputMode(VSScript *se, int index) nogil:
         except:
             return 0
 
-        if isinstance(output, VideoOutputTuple):
+        if isinstance(output, AlphaOutputTuple):
             return output[2]   
         return 0
         

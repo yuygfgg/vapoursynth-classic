@@ -2179,8 +2179,8 @@ cdef class Core(object):
             yield tmp
 
     def get_plugins(self):
-        import warnings
-        warnings.warn("get_plugins() is deprecated. Use \"plugins()\" instead.", DeprecationWarning)
+        #import warnings
+        #warnings.warn("get_plugins() is deprecated. Use \"plugins()\" instead.", DeprecationWarning)
         
         cdef dict sout = {}
         
@@ -2197,8 +2197,8 @@ cdef class Core(object):
         return sout
 
     def list_functions(self):
-        import warnings
-        warnings.warn("list_functions() is deprecated. Use \"plugins()\" instead.", DeprecationWarning)
+        #import warnings
+        #warnings.warn("list_functions() is deprecated. Use \"plugins()\" instead.", DeprecationWarning)
         
         sout = ""
         plugins = self.get_plugins()
@@ -2218,8 +2218,8 @@ cdef class Core(object):
         return createVideoFormat(&fmt, self.funcs, self.core)
 
     def register_format(self, ColorFamily color_family, SampleType sample_type, int bits_per_sample, int subsampling_w, int subsampling_h):
-        import warnings
-        warnings.warn("register_format() is deprecated. Use \"query_video_format\" instead.", DeprecationWarning)
+        #import warnings
+        #warnings.warn("register_format() is deprecated. Use \"query_video_format\" instead.", DeprecationWarning)
         return self.query_video_format(color_family, sample_type, bits_per_sample, subsampling_w, subsampling_h);
 
     def get_video_format(self, uint32_t id):
@@ -2230,8 +2230,8 @@ cdef class Core(object):
             return createVideoFormat(&fmt, self.funcs, self.core)
 
     def get_format(self, uint32_t id):
-        import warnings
-        warnings.warn("get_format() is deprecated. Use \"get_video_format\" instead.", DeprecationWarning)
+        #import warnings
+        #warnings.warn("get_format() is deprecated. Use \"get_video_format\" instead.", DeprecationWarning)
         return self.get_video_format(id);
         
     def log_message(self, MessageType message_type, str message):
@@ -2364,8 +2364,8 @@ cdef class Plugin(object):
             yield tmp
 
     def get_functions(self):
-        import warnings
-        warnings.warn("get_functions() is deprecated. Use \"functions()\" instead.", DeprecationWarning)
+        #import warnings
+        #warnings.warn("get_functions() is deprecated. Use \"functions()\" instead.", DeprecationWarning)
         
         cdef dict sout = {}
         for func in self.functions():
@@ -2374,8 +2374,8 @@ cdef class Plugin(object):
         return sout
 
     def list_functions(self):
-        import warnings
-        warnings.warn("list_functions() is deprecated. Use \"functions()\" instead.", DeprecationWarning)
+        #import warnings
+        #warnings.warn("list_functions() is deprecated. Use \"functions()\" instead.", DeprecationWarning)
         
         sout = ""
         functions = self.get_functions()

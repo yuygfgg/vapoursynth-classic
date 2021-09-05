@@ -441,6 +441,7 @@ def get_current_environment():
 _EMPTY = []
 
 AlphaOutputTuple = namedtuple("AlphaOutputTuple", "clip alpha alt_output")
+VideoOutputTuple = AlphaOutputTuple
 
 def _construct_type(signature):
     type,*opt = signature.split(":")

@@ -79,7 +79,7 @@ jobs:
     - name: Compile
       run: |
         msbuild msvc_project/VapourSynth.sln /t:Build /p:Configuration=Release /p:Platform=${{ matrix.platform }}        
-        pip install . --no-deps
+        pip install . --no-deps -v
         
         pushd installer
         $env:SKIP_COMPRESS="no"
@@ -91,20 +91,25 @@ jobs:
         } else {
           pushd buildp32
         }
-        pip install . --no-deps
+        pip install . --no-deps -v
         popd
         popd
 
     - name: Build release
       shell: bash
       run: |
-        7z a -t7z -mx=3 ../release.7z .
-        mv ../release.7z .
+        arch=${{ matrix.arch }}
+        which python
+        cp "$(dirname $(which python))"/Lib/site-packages/vapoursynth*.pyd installer/buildp${arch:1}
+        7z a -t7z -mx=3 ../build.7z .
+        7z a -t7z -mx=9 ../release.7z installer
+        mv ../*.7z .
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: unpack-me-${{matrix.arch}}
         path: |
+          build.7z
           release.7z
 
     - name: Run test

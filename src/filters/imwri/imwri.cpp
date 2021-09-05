@@ -528,7 +528,7 @@ struct ReadData {
     int cachedFrameNum;
     bool cachedAlpha;
     bool embedICC;
-    const VSFrameRef *cachedFrame;
+    const VSFrame *cachedFrame;
 
     ReadData() : fileListMode(true) {};
 };

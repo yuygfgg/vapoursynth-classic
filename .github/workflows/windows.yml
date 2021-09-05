@@ -82,7 +82,7 @@ jobs:
         pip install . --no-deps
         
         pushd installer
-        $env:SKIP_COMPRESS="yes"
+        $env:SKIP_COMPRESS="no"
         $env:SKIP_WAIT="yes"
         & ".\make portable.bat"
         
@@ -94,6 +94,18 @@ jobs:
         pip install . --no-deps
         popd
         popd
+
+    - name: Build release
+      shell: bash
+      run: |
+        7z a -t7z -mx=3 ../release.7z .
+        mv ../release.7z .
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: unpack-me-${{matrix.arch}}
+        path: |
+          release.7z
 
     - name: Run test
       if: ${{ matrix.test }}

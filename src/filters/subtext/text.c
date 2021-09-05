@@ -219,10 +219,7 @@ static const VSFrame *VS_CC assGetFrame(int n, int activationReason,
         d->lastn = n;
     }
 
-    VSFrame *frame = vsapi->addFrameRef(d->lastframe);
-    VSMap *props = vsapi->getFramePropertiesRW(frame);
-    vsapi->mapSetFrame(props, "_Alpha", vsapi->addFrameRef(d->lastalpha), maAppend);
-    return frame;
+    return vsapi->addFrameRef(d->lastframe);
 }
 
 static void VS_CC assFree(void *instanceData, VSCore *core, const VSAPI *vsapi)

@@ -96,6 +96,7 @@
       <AdditionalDependencies>mimalloc-override.lib;vsscript.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <LargeAddressAware>true</LargeAddressAware>
+      <ForceSymbolReferences>_mi_version</ForceSymbolReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -111,6 +112,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>mimalloc-override.lib;vsscript.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
+      <ForceSymbolReferences>mi_version</ForceSymbolReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,6 +135,7 @@
       <AdditionalDependencies>mimalloc-override.lib;vsscript.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <LargeAddressAware>true</LargeAddressAware>
+      <ForceSymbolReferences>_mi_version</ForceSymbolReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -153,6 +156,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>mimalloc-override.lib;vsscript.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
+      <ForceSymbolReferences>mi_version</ForceSymbolReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

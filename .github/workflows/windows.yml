@@ -36,9 +36,11 @@ jobs:
         git clone https://github.com/microsoft/mimalloc --branch v2.0.1 --depth 1
 
     - name: Build mimalloc
+      shell: cmd
       run: |
         cd mimalloc
         msbuild ide/vs2019/mimalloc.sln /p:Configuration=Release /p:Platform=${{ matrix.arch }}
+        out\msvc-${{matrix.platform}}\Release\mimalloc-override-test.exe
         cd ..
 
     - name: Setup Python 3.8

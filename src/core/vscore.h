@@ -834,7 +834,7 @@ private:
     std::vector<VSFilterDependency> dependencies;
     std::vector<VSFilterDependency> consumers;
 
-    std::atomic<int64_t> processingTime;
+    std::atomic<int64_t> processingTime {0};
 
     std::mutex cacheMutex;
     bool cacheLinear = false;

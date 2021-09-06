@@ -15,7 +15,7 @@ jobs:
             bits: 32
             # unable to diagnose this error during `import vapoursynth`
             # ImportError: DLL load failed while importing vapoursynth: A dynamic link library (DLL) initialization routine failed.
-            test: true
+            test: false
           - arch: x64
             platform: x64
             bits: 64

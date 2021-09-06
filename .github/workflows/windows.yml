@@ -12,11 +12,13 @@ jobs:
         include:
           - arch: x86
             platform: Win32
+            bits: 32
             # unable to diagnose this error during `import vapoursynth`
             # ImportError: DLL load failed while importing vapoursynth: A dynamic link library (DLL) initialization routine failed.
             test: true
           - arch: x64
             platform: x64
+            bits: 64
             test: true
 
     steps:
@@ -98,12 +100,13 @@ jobs:
     - name: Build release
       shell: bash
       run: |
+        bits=${{ matrix.bits }}
         arch=${{ matrix.arch }}
-        cp "$(dirname $(which python))"/Lib/site-packages/vapoursynth*.pyd installer/buildp${arch:1}
+        cp "$(dirname $(which python))"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
         7z a -t7z -mx=3 ../build.7z .
         mv ../*.7z .
         mkdir upload
-        mv installer/buildp${arch:1} upload/release-${arch}
+        mv installer/buildp$bits upload/release-${arch}
     - name: Upload build artifact
       uses: actions/upload-artifact@v2
       with:

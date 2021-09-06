@@ -96,5 +96,16 @@ void vsLog3(vs3::VSMessageType type, const char *msg, ...) {
             va_end(alist);
             fprintf(stderr, "\n");
         }
+    } else {
+        va_list alist;
+        va_start(alist, msg);
+        vfprintf(stderr, msg, alist);
+        va_end(alist);
+        fprintf(stderr, "\n");
+    }
+
+    if (type == mtFatal) {
+        assert(false);
+        abort();
     }
 }

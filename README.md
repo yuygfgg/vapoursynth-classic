@@ -9,7 +9,7 @@ If your vpy script works under VapourSynth R54, then it should continue to work 
 We simply do not break vpy-level API.
 
 **Looking for the documentation?**
-Read the documentation here: [VapourSynth Documentation](https://amusementclub.github.io/doc/)
+Read the documentation here: [VapourSynth-Classic Documentation](https://amusementclub.github.io/doc/)
 
 ## Building
 On **Windows**, follow the build instructions provided in [`build instructions windows.md`](https://github.com/AmusementClub/vapoursynth-classic/blob/master/build%20instructions%20windows.md)

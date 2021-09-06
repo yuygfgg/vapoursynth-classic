@@ -110,6 +110,29 @@ jobs:
         name: build-${{matrix.arch}}
         if-no-files-found: error
         path: build.7z
+
+    - name: Run test
+      if: ${{ matrix.test }}
+      run: python -m unittest discover -s test -p "*test.py"
+
+    - name: Install sphinx
+      run: |
+        pip install -r python-requirements.txt
+
+    - name: Build Doc
+      shell: cmd
+      run: |
+        set SPHINXBUILD=sphinx-build
+        call docs_build.bat
+
+    - name: Build release
+      shell: bash
+      run: |
+        set -ex
+        dir="upload/release-${{ matrix.arch }}"
+        mv doc/_build/html "$dir"/doc
+        ls "$dir"/doc
+
     - name: Upload release artifact
       uses: actions/upload-artifact@v2
       with:
@@ -117,7 +140,3 @@ jobs:
         if-no-files-found: error
         path: |
           upload/
-
-    - name: Run test
-      if: ${{ matrix.test }}
-      run: python -m unittest discover -s test -p "*test.py"

@@ -104,7 +104,7 @@ void vsLog3(vs3::VSMessageType type, const char *msg, ...) {
         fprintf(stderr, "\n");
     }
 
-    if (type == mtFatal) {
+    if (type == vs3::mtFatal) {
         assert(false);
         abort();
     }

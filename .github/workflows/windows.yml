@@ -99,18 +99,24 @@ jobs:
       shell: bash
       run: |
         arch=${{ matrix.arch }}
-        which python
         cp "$(dirname $(which python))"/Lib/site-packages/vapoursynth*.pyd installer/buildp${arch:1}
         7z a -t7z -mx=3 ../build.7z .
-        7z a -t7z -mx=9 ../release.7z installer
         mv ../*.7z .
-    - name: Upload artifact
+        mkdir upload
+        mv installer/buildp${arch:1} upload/release-${arch}
+    - name: Upload build artifact
       uses: actions/upload-artifact@v2
       with:
-        name: unpack-me-${{matrix.arch}}
+        name: build-${{matrix.arch}}
+        if-no-files-found: error
+        path: build.7z
+    - name: Upload release artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-${{matrix.arch}}
+        if-no-files-found: error
         path: |
-          build.7z
-          release.7z
+          upload/
 
     - name: Run test
       if: ${{ matrix.test }}

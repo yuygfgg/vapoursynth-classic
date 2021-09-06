@@ -42,7 +42,7 @@ Options
 ``-p, --progress``
     Print progress to stderr
     
-``    --filter-time``
+``--filter-time``
     Records the time spent in each filter and prints it out at the end of processing.
 
 ``-i, --info``

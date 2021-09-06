@@ -7,6 +7,7 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 extern "C" {
 #include <libavformat/avformat.h>

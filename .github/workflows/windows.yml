@@ -116,8 +116,7 @@ jobs:
         cp "$(dirname $PYTHON38)"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
         7z a -t7z -mx=3 ../build.7z .
         mv ../*.7z .
-        mkdir upload
-        mv installer/buildp$bits upload/release-${arch}
+        mv installer/buildp$bits upload
     - name: Upload build artifact
       uses: actions/upload-artifact@v2
       with:
@@ -143,9 +142,7 @@ jobs:
       shell: bash
       run: |
         set -ex
-        dir="upload/release-${{ matrix.arch }}"
-        mv doc/_build/html "$dir"/doc
-        ls "$dir"/doc
+        mv doc/_build/html upload/doc
 
     - name: Upload release artifact
       uses: actions/upload-artifact@v2

@@ -2156,7 +2156,7 @@ VSPlugin::VSPlugin(const std::string &relFilename, const std::string &forcedName
     else
         filename = relFilename;
 
-    libHandle = dlopen(filename.c_str(), RTLD_LAZY);
+    libHandle = dlopen(filename.c_str(), RTLD_LAZY | RTLD_LOCAL);
 
     if (!libHandle) {
         const char *dlError = dlerror();

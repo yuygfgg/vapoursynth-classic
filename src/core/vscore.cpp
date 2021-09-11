@@ -2160,6 +2160,7 @@ VSPlugin::VSPlugin(const std::string &relFilename, const std::string &forcedName
 
     if (!libHandle) {
         const char *dlError = dlerror();
+        fprintf(stderr, "WARNING: VS failed to load %s, error = %s\n", relFilename.c_str(), dlError);
         if (dlError)
             throw VSException("Failed to load " + relFilename + ". Error given: " + dlError);
         else

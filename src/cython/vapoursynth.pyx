@@ -2126,8 +2126,12 @@ cdef void __stdcall log_handler_free(void *userData) nogil:
 cdef class Core(object):
     cdef VSCore *core
     cdef const VSAPI *funcs
+    cdef public bint add_cache  # only for compatbility with R54 scripts, no effect.
 
     cdef object __weakref__
+
+    def __cinit__(self):
+        self.add_cache = True
 
     def __init__(self):
         raise Error('Class cannot be instantiated directly')

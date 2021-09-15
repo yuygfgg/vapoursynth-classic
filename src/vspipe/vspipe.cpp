@@ -579,6 +579,14 @@ static bool outputNode(const VSPipeOptions &opts, VSPipeOutputData *data, VSCore
 
     data->condition.wait(lock);
 
+    // We must check for spurious wakeups (e.g. SIGINT received), and do *not* proceed to cleanup:
+    // the worker threads might still be running, and cleaning up will probably just trigger SIGSEGV
+    // in the worker threads.
+    if (data->totalFrames != data->completedFrames || data->totalFrames != data->completedAlphaFrames) {
+        fprintf(stderr, "Interrupted\n");
+        exit(1);
+    }
+
     if (data->outputError) {
         for (auto &iter : data->reorderMap) {
             data->vsapi->freeFrame(iter.second.first);

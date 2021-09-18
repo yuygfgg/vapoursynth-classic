@@ -23,10 +23,6 @@
 
 #include "VapourSynth4.h"
 
-#ifdef VS_USE_MIMALLOC
-#   include <mimalloc-override.h>
-#endif
-
 void stdlibInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi);
 void mergeInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi);
 void reorderInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi);
@@ -39,5 +35,25 @@ void boxBlurInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi);
 void resizeInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi);
 void averageFramesInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi);
 
+#ifdef VS_USE_MIMALLOC
+
+#include <mimalloc.h>
+template<typename T>
+static inline T *internal_aligned_malloc(size_t size, size_t alignment) {
+    return static<T*>(mi_malloc_aligned(size, alignment));
+}
+
+static inline void internal_aligned_free(void *ptr) {
+    mi_free(ptr);
+}
+
+#else
+
+#include "VSHelper4.h"
+
+#define internal_aligned_malloc vsh::vsh_aligned_malloc
+#define internal_aligned_free   vsh::vsh_aligned_free
+
+#endif // VS_USE_MIMALLOC
 
 #endif // INTERNALFILTERS_H

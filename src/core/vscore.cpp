@@ -395,7 +395,7 @@ VSPlaneData::VSPlaneData(size_t dataSize, MemoryUse &mem) noexcept : refcount(1)
 #ifdef VS_FRAME_POOL
     data = mem.allocBuffer(size + 2 * VSFrame::guardSpace);
 #else
-    data = vsh_aligned_malloc<uint8_t>(size + 2 * VSFrame::guardSpace, VSFrame::alignment);
+    data = internal_aligned_malloc<uint8_t>(size + 2 * VSFrame::guardSpace, VSFrame::alignment);
 #endif
     assert(data);
     if (!data)
@@ -414,7 +414,7 @@ VSPlaneData::VSPlaneData(const VSPlaneData &d) noexcept : refcount(1), mem(d.mem
 #ifdef VS_FRAME_POOL
     data = mem.allocBuffer(size);
 #else
-    data = vsh_aligned_malloc<uint8_t>(size, VSFrame::alignment);
+    data = internal_aligned_malloc<uint8_t>(size, VSFrame::alignment);
 #endif
     assert(data);
     if (!data)
@@ -428,7 +428,7 @@ VSPlaneData::~VSPlaneData() {
 #ifdef VS_FRAME_POOL
     mem.freeBuffer(data);
 #else
-    vsh_aligned_free(data);
+    internal_aligned_free(data);
 #endif
     mem.subtract(size);
 }

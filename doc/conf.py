@@ -41,7 +41,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'VapourSynth'
+project = 'VapourSynth-Classic'
 copyright = '2012-2021, Fredrik Mellbin'
 
 # The version info for the project you're documenting, acts as replacement for

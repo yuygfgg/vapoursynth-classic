@@ -1,5 +1,5 @@
-Welcome to `VapourSynth <http://www.vapoursynth.com/>`_’s documentation!
-========================================================================
+Welcome to `VapourSynth-Classic <https://amusementclub.github.io/doc/>`_’s documentation!
+=========================================================================================
 
 Contents:
 

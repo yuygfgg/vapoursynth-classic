@@ -154,3 +154,113 @@ endif # VSSCRIPT
 pkglib_LTLIBRARIES =
 
 commonpluginldflags = -no-undefined -avoid-version $(PLUGINLDFLAGS) $(UNDEFINEDLDFLAGS)
+
+if SUBTEXT
+pkglib_LTLIBRARIES += libsubtext.la
+
+libsubtext_la_SOURCES = src/filters/subtext/text.c \
+						src/filters/subtext/common.c \
+						src/filters/subtext/common.h \
+						src/filters/subtext/image.cpp \
+						src/filters/subtext/toass.cpp \
+						src/filters/subtext/toutf8.c
+
+libsubtext_la_LDFLAGS = $(commonpluginldflags)
+libsubtext_la_LIBTOOLFLAGS = $(commonlibtoolflags)
+libsubtext_la_CPPFLAGS = $(LIBASS_CFLAGS) $(FFMPEG_CFLAGS)
+libsubtext_la_LIBADD = $(LIBASS_LIBS) $(FFMPEG_LIBS)
+endif
+
+
+
+if EEDI3
+pkglib_LTLIBRARIES += libeedi3.la
+
+libeedi3_la_SOURCES = src/filters/eedi3/eedi3.c
+libeedi3_la_LDFLAGS = $(commonpluginldflags)
+libeedi3_la_LIBTOOLFLAGS = $(commonlibtoolflags)
+endif
+
+
+
+if IMWRI
+pkglib_LTLIBRARIES += libimwri.la
+
+libimwri_la_SOURCES = src/filters/imwri/imwri.cpp
+libimwri_la_LDFLAGS = $(commonpluginldflags)
+libimwri_la_LIBTOOLFLAGS = $(commonlibtoolflags)
+libimwri_la_CPPFLAGS = $(IMAGEMAGICK_CFLAGS)
+libimwri_la_LIBADD = $(IMAGEMAGICK_LIBS)
+endif
+
+
+
+if MISCFILTERS
+pkglib_LTLIBRARIES += libmiscfilters.la
+
+libmiscfilters_la_SOURCES = src/filters/misc/miscfilters.cpp
+libmiscfilters_la_LDFLAGS = $(commonpluginldflags)
+libmiscfilters_la_LIBTOOLFLAGS = $(commonlibtoolflags)
+endif
+
+
+
+if MORPHO
+pkglib_LTLIBRARIES += libmorpho.la
+
+libmorpho_la_SOURCES = src/filters/morpho/morpho.c \
+					   src/filters/morpho/morpho_filters.c \
+					   src/filters/morpho/morpho_filters.h \
+					   src/filters/morpho/morpho.h \
+					   src/filters/morpho/morpho_selems.c \
+					   src/filters/morpho/morpho_selems.h
+libmorpho_la_LDFLAGS = $(commonpluginldflags)
+libmorpho_la_LIBTOOLFLAGS = $(commonlibtoolflags)
+endif
+
+
+
+if OCR
+pkglib_LTLIBRARIES += libocr.la
+
+libocr_la_SOURCES = src/filters/ocr/ocr.c
+libocr_la_LDFLAGS = $(commonpluginldflags)
+libocr_la_LIBTOOLFLAGS = $(commonlibtoolflags)
+libocr_la_CPPFLAGS = $(TESSERACT_CFLAGS)
+libocr_la_LIBADD = $(TESSERACT_LIBS)
+endif
+
+
+
+if REMOVEGRAIN
+pkglib_LTLIBRARIES += libremovegrain.la
+
+libremovegrain_la_SOURCES = src/filters/removegrain/clense.cpp \
+							src/filters/removegrain/removegrainvs.cpp \
+							src/filters/removegrain/repairvs.cpp \
+							src/filters/removegrain/shared.cpp \
+							src/filters/removegrain/shared.h \
+							src/filters/removegrain/verticalcleaner.cpp
+libremovegrain_la_LDFLAGS = $(commonpluginldflags)
+libremovegrain_la_LIBTOOLFLAGS = $(commonlibtoolflags)
+endif
+
+
+
+if VINVERSE
+pkglib_LTLIBRARIES += libvinverse.la
+
+libvinverse_la_SOURCES = src/filters/vinverse/vinverse.c
+libvinverse_la_LDFLAGS = $(commonpluginldflags)
+libvinverse_la_LIBTOOLFLAGS = $(commonlibtoolflags)
+endif
+
+
+
+if VIVTC
+pkglib_LTLIBRARIES += libvivtc.la
+
+libvivtc_la_SOURCES = src/filters/vivtc/vivtc.c
+libvivtc_la_LDFLAGS = $(commonpluginldflags)
+libvivtc_la_LIBTOOLFLAGS = $(commonlibtoolflags)
+endif

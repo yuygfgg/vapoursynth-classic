@@ -14,6 +14,9 @@ Contents:
    functions
    output
    applications
+   avisynthcomp
+   includedplugins
+   functions
    apireference
 
 

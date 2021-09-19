@@ -431,7 +431,7 @@ static void VS_CC audioReverseCreate(const VSMap *in, VSMap *out, void *userData
 // AudioGain
 
 struct AudioGainDataExtra {
-    std::vector<double> gain;
+    std::vector<float> gain;
     const VSAudioInfo *ai;
 };
 
@@ -449,7 +449,7 @@ static const VSFrame *VS_CC audioGainGetFrame(int n, int activationReason, void 
         VSFrame *dst = vsapi->newAudioFrame(&d->ai->format, length, src, core);
 
         for (int p = 0; p < d->ai->format.numChannels; p++) {
-            double gain = d->gain[(d->gain.size() > 1) ? p : 0];
+            float gain = d->gain[(d->gain.size() > 1) ? p : 0];
             const T *srcPtr = reinterpret_cast<const T *>(vsapi->getReadPtr(src, p));
             T *dstPtr = reinterpret_cast<T *>(vsapi->getWritePtr(dst, p));
             for (int i = 0; i < length; i++)
@@ -704,7 +704,7 @@ static void VS_CC shuffleChannelsFree(void *instanceData, VSCore *core, const VS
 
 static void VS_CC shuffleChannelsCreate(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
     std::unique_ptr<ShuffleChannelsData> d(new ShuffleChannelsData());
-    int numSrcNodes = vsapi->mapNumElements(in, "clip");
+    int numSrcNodes = vsapi->mapNumElements(in, "clips");
     int numSrcChannels = vsapi->mapNumElements(in, "channels_in");
     int numDstChannels = vsapi->mapNumElements(in, "channels_out");
 
@@ -720,7 +720,7 @@ static void VS_CC shuffleChannelsCreate(const VSMap *in, VSMap *out, void *userD
         int channel = vsapi->mapGetIntSaturated(in, "channels_in", i, nullptr);
         int dstChannel = vsapi->mapGetIntSaturated(in, "channels_out", i, nullptr);
         channelLayout |= (static_cast<uint64_t>(1) << dstChannel);
-        VSNode *node = vsapi->mapGetNode(in, "clip", std::min(numSrcNodes - 1, i), nullptr);
+        VSNode *node = vsapi->mapGetNode(in, "clips", std::min(numSrcNodes - 1, i), nullptr);
         d->sourceNodes.push_back({node, channel, dstChannel, -1});
     }
 
@@ -1047,14 +1047,14 @@ static void VS_CC testAudioCreate(const VSMap *in, VSMap *out, void *userData, V
 //////////////////////////////////////////
 // Init
 
-void VS_CC audioInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi) {
+void audioInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi) {
     vspapi->registerFunction("AudioTrim", "clip:anode;first:int:opt;last:int:opt;length:int:opt;", "clip:anode;", audioTrimCreate, 0, plugin);
     vspapi->registerFunction("AudioSplice", "clips:anode[];", "clip:anode;", audioSpliceCreate, 0, plugin);
     vspapi->registerFunction("AudioLoop", "clip:anode;times:int:opt;", "clip:anode;", audioLoopCreate, 0, plugin);
     vspapi->registerFunction("AudioReverse", "clip:anode;", "clip:anode;", audioReverseCreate, 0, plugin);
     vspapi->registerFunction("AudioGain", "clip:anode;gain:float[]:opt;", "clip:anode;", audioGainCreate, 0, plugin);
     vspapi->registerFunction("AudioMix", "clips:anode[];matrix:float[];channels_out:int[];", "clip:anode;", audioMixCreate, 0, plugin);
-    vspapi->registerFunction("ShuffleChannels", "clip:anode[];channels_in:int[];channels_out:int[];", "clip:anode;", shuffleChannelsCreate, 0, plugin);
+    vspapi->registerFunction("ShuffleChannels", "clips:anode[];channels_in:int[];channels_out:int[];", "clip:anode;", shuffleChannelsCreate, 0, plugin);
     vspapi->registerFunction("SplitChannels", "clip:anode;", "clip:anode[];", splitChannelsCreate, 0, plugin);
     vspapi->registerFunction("AssumeSampleRate", "clip:anode;src:anode:opt;samplerate:int:opt;", "clip:anode;", assumeSampleRateCreate, 0, plugin);
     vspapi->registerFunction("BlankAudio", "clip:anode:opt;channels:int:opt;bits:int:opt;sampletype:int:opt;samplerate:int:opt;length:int:opt;keep:int:opt;", "clip:anode;", blankAudioCreate, 0, plugin);

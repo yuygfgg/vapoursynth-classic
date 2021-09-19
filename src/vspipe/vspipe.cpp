@@ -577,7 +577,7 @@ static bool outputNode(const VSPipeOptions &opts, VSPipeOutputData *data, VSCore
             data->vsapi->getFrameAsync(n, data->alphaNode, frameDoneCallback, data);
     }
 
-    data->condition.wait(lock);
+    data->condition.wait(lock, [&]() { return data->totalFrames == data->completedFrames && data->totalFrames == data->completedAlphaFrames; });
 
     // We must check for spurious wakeups (e.g. SIGINT received), and do *not* proceed to cleanup:
     // the worker threads might still be running, and cleaning up will probably just trigger SIGSEGV

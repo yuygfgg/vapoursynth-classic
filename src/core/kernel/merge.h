@@ -33,11 +33,16 @@ union vs_merge_weight {
     float f;
 };
 
+#define DECL_PREMUL(pixel, isa) void vs_premultiply_##pixel##_##isa(const void *src1, const void *src2, void *dst, unsigned depth, unsigned offset, unsigned n);
 #define DECL_MERGE(pixel, isa) void vs_merge_##pixel##_##isa(const void *src1, const void *src2, void *dst, union vs_merge_weight weight, unsigned n);
 #define DECL_MASK_MERGE(pixel, isa) void vs_mask_merge_##pixel##_##isa(const void *src1, const void *src2, const void *mask, void *dst, unsigned depth, unsigned offset, unsigned n);
 #define DECL_MASK_MERGE_PREMUL(pixel, isa) void vs_mask_merge_premul_##pixel##_##isa(const void *src1, const void *src2, const void *mask, void *dst, unsigned depth, unsigned offset, unsigned n);
 #define DECL_MAKEDIFF(pixel, isa) void vs_makediff_##pixel##_##isa(const void *src1, const void *src2, void *dst, unsigned depth, unsigned n);
 #define DECL_MERGEDIFF(pixel, isa) void vs_mergediff_##pixel##_##isa(const void *src1, const void *src2, void *dst, unsigned depth, unsigned n);
+
+DECL_PREMUL(byte, c)
+DECL_PREMUL(word, c)
+DECL_PREMUL(float, c)
 
 DECL_MERGE(byte, c)
 DECL_MERGE(word, c)
@@ -99,7 +104,7 @@ DECL_MAKEDIFF(float, avx2)
 DECL_MERGEDIFF(byte, avx2)
 DECL_MERGEDIFF(word, avx2)
 DECL_MERGEDIFF(float, avx2)
-#endif
+#endif /* VS_TARGET_CPU_X86 */
 
 #undef DECL_MERGEDIFF
 #undef DECL_MAKEDIFF
@@ -108,15 +113,17 @@ DECL_MERGEDIFF(float, avx2)
 #undef DECL_MERGE
 
 #ifdef VS_MERGE_IMPL
-// Magic divisors from: https://www.hackersdelight.org/magic.htm
-// Signed coefficients used for up to 15-bit, unsigned for 16-bit.
-// Only 16-bit data can occupy all 32 intermediate bits.
+/*
+* Magic divisors from : https://www.hackersdelight.org/magic.htm
+* Signed coefficients used for up to 15-bit, unsigned for 16-bit.
+* Only 16-bit data can occupy all 32 intermediate bits.
+*/
 static const uint32_t div_table[8] = { 0x80402011, 0x80200803, 0x80100201, 0x80080081, 0x80040021, 0x80020009, 0x80010003, 0x80008001 };
 static const uint8_t shift_table[8] = { 8, 9, 10, 11, 12, 13, 14, 15 };
 #endif
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 #endif // MERGE_H

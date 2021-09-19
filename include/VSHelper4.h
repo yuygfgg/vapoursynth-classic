@@ -96,7 +96,7 @@ static inline VSH4_BOOLEAN_TYPE VSH4_MANGLE_FUNCTION_NAME(isSameVideoFormat)(con
 
 /* convenience function to check if a clip has the same format as a format id */
 static inline VSH4_BOOLEAN_TYPE VSH4_MANGLE_FUNCTION_NAME(isSameVideoPresetFormat)(int presetFormat, const VSVideoFormat *v, VSCore *core, const VSAPI *vsapi) {
-    return vsapi->queryVideoFormatID(v->colorFamily, v->sampleType, v->bitsPerSample, v->subSamplingW, v->subSamplingH, core) == presetFormat;
+    return vsapi->queryVideoFormatID(v->colorFamily, v->sampleType, v->bitsPerSample, v->subSamplingW, v->subSamplingH, core) == (uint32_t)presetFormat;
 }
 
 /* convenience function to check for if two clips have the same format (but not framerate) while also including width and height (unknown/changeable will be considered the same too) */

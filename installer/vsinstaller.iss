@@ -133,7 +133,14 @@ Source: ..\sdk\invert_example.c; DestDir: {app}\sdk\examples; Flags: ignoreversi
 Source: ..\sdk\vsscript_example.c; DestDir: {app}\sdk\examples; Flags: ignoreversion uninsrestartdelete restartreplace; Components: sdk
 
 ;bundled plugins
+Source: Plugins{#= InstallerBits}\*; DestDir: {app}\core\plugins; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vscore
 Source: {#= SourceBinaryPath}\AvsCompat.dll; DestDir: {app}\core\plugins; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vscore
+Source: {#= SourceBinaryPath}\EEDI3.dll; DestDir: {app}\core\plugins; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vscore
+Source: {#= SourceBinaryPath}\MiscFilters.dll; DestDir: {app}\core\plugins; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vscore
+Source: {#= SourceBinaryPath}\Morpho.dll; DestDir: {app}\core\plugins; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vscore
+Source: {#= SourceBinaryPath}\RemoveGrainVS.dll; DestDir: {app}\core\plugins; Flags: ignoreversion uninsrestartdelete restartreplace; Components:vscore
+Source: {#= SourceBinaryPath}\Vinverse.dll; DestDir: {app}\core\plugins; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vscore
+Source: {#= SourceBinaryPath}\VIVTC.dll; DestDir: {app}\core\plugins; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vscore
 
 ;pismo installer
 Source: "pfm-192-vapoursynth-win.exe"; DestDir: {app}\pismo; Flags: ignoreversion uninsrestartdelete restartreplace; Components: pismo

@@ -129,7 +129,7 @@ static void assRender(VSFrame *dst, VSFrame *alpha, const VSAPI *vsapi,
                       ASS_Image *img)
 {
     uint8_t *planes[4];
-    int strides[4], p;
+    ptrdiff_t strides[4], p;
 
     for(p = 0; p < 4; p++) {
         VSFrame *fr = p == 3 ? alpha : dst;
@@ -214,6 +214,7 @@ static const VSFrame *VS_CC assGetFrame(int n, int activationReason,
                                                  NULL, core);
 
             assRender(dst, a, vsapi, img);
+            vsapi->mapSetInt(vsapi->getFramePropertiesRW(a), "_ColorRange", 0, maReplace);
             vsapi->mapConsumeFrame(vsapi->getFramePropertiesRW(dst), "_Alpha", a, maAppend);
             vsapi->freeFrame(d->lastframe);
             d->lastframe = dst;
@@ -273,6 +274,7 @@ static void VS_CC assRenderCreate(const VSMap *in, VSMap *out, void *userData,
 #define ERROR_SIZE 512
     char error[ERROR_SIZE] = { 0 };
 
+    d.ass = NULL;
     d.lastn = -1;
     d.node = vsapi->mapGetNode(in, "clip", 0, 0);
     d.vi[0] = *vsapi->getVideoInfo(d.node);
@@ -397,9 +399,9 @@ static void VS_CC assRenderCreate(const VSMap *in, VSMap *out, void *userData,
         ass_set_line_spacing(d.ass_renderer, d.linespacing);
 
     if(d.sar) {
-        ass_set_aspect_ratio(d.ass_renderer,
+        ass_set_pixel_aspect(d.ass_renderer,
                              (double)d.vi[0].width /
-                             d.vi[0].height * d.sar, 1);
+                             d.vi[0].height * d.sar);
     }
 
     if(d.fontdir)

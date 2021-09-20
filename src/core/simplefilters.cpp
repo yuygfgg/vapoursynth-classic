@@ -2213,8 +2213,8 @@ static void VS_CC setFramePropCreate(const VSMap *in, VSMap *out, void *userData
     if ((num_ints > -1) + (num_floats > -1) + (num_strings > -1) > 1)
         RETERROR("SetFrameProp: only one of 'intval', 'floatval', and 'data' can be passed->");
 
-    if (num_ints + num_floats + num_strings == -3)
-        RETERROR("SetFrameProp: one of 'intval', 'floatval', or 'data' must be passed->");
+    if (num_ints + num_floats + num_strings == -3 && !d->remove)
+        RETERROR("SetFrameProp: one of 'intval', 'floatval', or 'data' must be passed when not deleting->");
 
     int prop_len = vsapi->mapGetDataSize(in, "prop", 0, nullptr);
 

@@ -1188,8 +1188,8 @@ void VSNode::setCacheMode(int mode) {
 
         // always reset to defaults on mode change
         cache.setFixedSize(false);
-        cache.setMaxFrames(20);
-        cache.setMaxHistory(20);
+        cache.setMaxFrames(10);
+        cache.setMaxHistory(10);
         if (!cacheEnabled)
             cache.clear();
     }

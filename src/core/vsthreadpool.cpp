@@ -357,7 +357,7 @@ void VSThreadPool::startInternalRequest(const PVSFrameContext &notify, NodeOutpu
     if (core->memory->isOverLimit()) {
         ticks = 0;
         core->notifyCaches(true);
-    } else if (++ticks == 500) { // a normal tick for caches to adjust their sizes based on recent history
+    } else if (++ticks == 50) { // a normal tick for caches to adjust their sizes based on recent history
         ticks = 0;
         core->notifyCaches(false);
     }

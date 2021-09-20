@@ -370,11 +370,11 @@ MemoryUse::MemoryUse() : used(0), freeOnZero(false), largePageEnabled(largePageS
 
     // If the Windows VirtualAlloc bug is present, it is not safe to use large pages by default,
     // because another application could trigger the bug.
-    //if (isWindowsLargePageBroken())
-    //    largePageEnabled = false;
+    if (isWindowsLargePageBroken())
+        largePageEnabled = false;
 
     // Always disable large pages at the moment
-    largePageEnabled = false;
+    //largePageEnabled = false;
 
     // 1GB
     setMaxMemoryUse(1024 * 1024 * 1024);

@@ -49,7 +49,7 @@
 #ifdef VS_TARGET_OS_WINDOWS
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
-#    //define VS_FRAME_POOL // fixme, remove after some testing
+#    define VS_FRAME_POOL
 #else
 #    include <dlfcn.h>
 #endif

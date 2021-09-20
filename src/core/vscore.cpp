@@ -47,6 +47,15 @@
 
 #ifdef VS_USE_MIMALLOC
 #   include <mimalloc-new-delete.h>
+namespace {
+static struct mimalloc_set_options {
+    mimalloc_set_options() {
+        mi_option_disable(mi_option_page_reset);
+        mi_option_disable(mi_option_segment_reset);
+        mi_option_enable(mi_option_large_os_pages);
+    }
+} _mimalloc;
+}
 #endif
 
 using namespace vsh;

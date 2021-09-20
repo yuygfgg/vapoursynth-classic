@@ -46,10 +46,6 @@ extern "C" {
 #include <cstdio>
 #include <cinttypes>
 
-#ifdef VS_USE_MIMALLOC
-#   include <mimalloc-new-delete.h>
-#endif
-
 
 // fixme, add a more verbose graph mode with filter times included
 // fixme, using a "." for no output is weird
@@ -870,11 +866,6 @@ int wmain(int argc, wchar_t **argv) {
     SetConsoleCtrlHandler(HandlerRoutine, TRUE);
 #else
 int main(int argc, char **argv) {
-#endif
-#ifdef VS_USE_MIMALLOC
-    mi_option_disable(mi_option_page_reset);
-    mi_option_disable(mi_option_segment_reset);
-    mi_option_enable(mi_option_large_os_pages);
 #endif
 
     const VSSCRIPTAPI *vssapi = getVSScriptAPI(VSSCRIPT_API_VERSION);

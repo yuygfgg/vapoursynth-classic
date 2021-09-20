@@ -871,6 +871,12 @@ int wmain(int argc, wchar_t **argv) {
 #else
 int main(int argc, char **argv) {
 #endif
+#ifdef VS_USE_MIMALLOC
+    mi_option_disable(mi_option_page_reset);
+    mi_option_disable(mi_option_segment_reset);
+    mi_option_enable(mi_option_large_os_pages);
+#endif
+
     const VSSCRIPTAPI *vssapi = getVSScriptAPI(VSSCRIPT_API_VERSION);
     if (!vssapi) {
         fprintf(stderr, "Failed to initialize VSScript\n");

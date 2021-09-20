@@ -161,21 +161,22 @@ static const VSFrame *VS_CC averageFramesGetFrame(int n, int activationReason, v
 
             decltype(&vs_average_plane_byte_luma_c) func = nullptr;
 
+            bool yuvhandling = (plane > 0) && (fi->colorFamily == cfYUV);
 #ifdef VS_TARGET_CPU_X86
             if (vs_get_cpulevel(core) >= VS_CPU_LEVEL_SSE2) {
                 if (fi->bytesPerSample == 1)
-                    func = (plane == 1 || plane == 2) ? vs_average_plane_byte_chroma_sse2 : vs_average_plane_byte_luma_sse2;
+                    func = yuvhandling ? vs_average_plane_byte_chroma_sse2 : vs_average_plane_byte_luma_sse2;
                 else if (fi->bytesPerSample == 2)
-                    func = (plane == 1 || plane == 2) ? vs_average_plane_word_chroma_sse2 : vs_average_plane_word_luma_sse2;
+                    func = yuvhandling ? vs_average_plane_word_chroma_sse2 : vs_average_plane_word_luma_sse2;
                 else
                     func = vs_average_plane_float_sse2;
             }
 #endif
             if (!func) {
                 if (fi->bytesPerSample == 1)
-                    func = (plane == 1 || plane == 2) ? vs_average_plane_byte_chroma_c : vs_average_plane_byte_luma_c;
+                    func = yuvhandling ? vs_average_plane_byte_chroma_c : vs_average_plane_byte_luma_c;
                 else if (fi->bytesPerSample == 2)
-                    func = (plane == 1 || plane == 2) ? vs_average_plane_word_chroma_c : vs_average_plane_word_luma_c;
+                    func = yuvhandling ? vs_average_plane_word_chroma_c : vs_average_plane_word_luma_c;
                 else
                     func = vs_average_plane_float_c;
             }

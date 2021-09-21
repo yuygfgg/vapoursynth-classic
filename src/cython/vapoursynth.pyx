@@ -869,6 +869,7 @@ cdef void typedDictToMap(dict ndict, dict atypes, VSMap *inm, VSCore *core, cons
             else:
                 raise Error('argument ' + key + ' has an unknown type: ' + atypes[key])
 
+Format = VideoFormat  # for R54 compatibility
 cdef class VideoFormat(object):
     cdef readonly uint32_t id
     cdef readonly str name

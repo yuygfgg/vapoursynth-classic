@@ -46,7 +46,6 @@ extern "C" {
 #include <cstdio>
 #include <cinttypes>
 
-
 // fixme, add a more verbose graph mode with filter times included
 // fixme, using a "." for no output is weird
 

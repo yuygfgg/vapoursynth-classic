@@ -31,7 +31,7 @@ void blendSubtitles(VSNode *clip, VSNode *subs, const VSMap *in, VSMap *out, con
 
     if (unsuitable_format || unsuitable_dimensions) {
         args = vsapi->createMap();
-        vsapi->mapConsumeNode(args, "clip", subs, maReplace);
+        vsapi->mapSetNode(args, "clip", subs, maReplace);
 
         if (unsuitable_format) {
             vsapi->mapSetInt(args, "format", vsapi->queryVideoFormatID(clip_vi->format.colorFamily, clip_vi->format.sampleType, clip_vi->format.bitsPerSample, clip_vi->format.subSamplingW, clip_vi->format.subSamplingH, core), maReplace);

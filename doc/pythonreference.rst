@@ -287,9 +287,15 @@ Classes and Functions
    
       Deprecated, use *fps.numerator* instead
 
+      The numerator of the framerate. If the clip has variable framerate, the
+      value will be 0.
+
    .. py:attribute:: fps_den
    
       Deprecated, use *fps.denominator* instead
+
+      The denominator of the framerate. If the clip has variable framerate, the
+      value will be 0.
 
    .. py:attribute:: flags
 
@@ -733,6 +739,10 @@ Classes and Functions
 
    Deprecated. Use :func:`get_current_environment` instead.
 
+   Returns an Environment-object representing the environment the script is currently running in. It will raise an error if we are currently not inside any
+   script-environment while vsscript is being used.
+
+   This function is intended for Python-based editors using vsscript.
    This function has been deprecated as this function has undefined behaviour when used together with generators or coroutines.
 
 .. py:function:: get_current_environment()

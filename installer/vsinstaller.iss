@@ -111,10 +111,8 @@ Source: {#= MimallocSourceBinaryPath}\{#= MimallocRedirectName}; DestDir: {app}\
 
 ;vsrepo
 Source: ..\vsrepo\vsrepo.py; DestDir: {app}\vsrepo; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vsrepo
-Source: ..\vsrepo\vsgenstubs\__init__.py; DestDir: {app}\vsrepo\vsgenstubs; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vsrepo
-Source: ..\vsrepo\vsgenstubs\_vapoursynth.part.pyi; DestDir: {app}\vsrepo\vsgenstubs; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vsrepo
-Source: ..\vsrepo\vsgenstubs4\__init__.py; DestDir: {app}\vsrepo\vsgenstubs; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vsrepo
-Source: ..\vsrepo\vsgenstubs4\_vapoursynth.part.pyi; DestDir: {app}\vsrepo\vsgenstubs; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vsrepo
+Source: ..\vsrepo\vsgenstubs4\__init__.py; DestDir: {app}\vsrepo\vsgenstubs4; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vsrepo
+Source: ..\vsrepo\vsgenstubs4\_vapoursynth.part.pyi; DestDir: {app}\vsrepo\vsgenstubs4; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vsrepo
 Source: 7z.exe; DestDir: {app}\vsrepo; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vsrepo
 Source: 7z.dll; DestDir: {app}\vsrepo; Flags: ignoreversion uninsrestartdelete restartreplace; Components: vsrepo
 

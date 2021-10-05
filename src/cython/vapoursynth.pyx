@@ -2137,7 +2137,7 @@ cdef void __stdcall log_handler_free(void *userData) nogil:
 cdef class Core(object):
     cdef VSCore *core
     cdef const VSAPI *funcs
-    cdef public bint add_cache  # only for compatbility with R54 scripts, no effect.
+    cdef public bint add_cache  # only for compatibility with R54 scripts, no effect.
 
     cdef object __weakref__
 

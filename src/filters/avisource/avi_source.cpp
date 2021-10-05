@@ -655,7 +655,7 @@ AVISource::AVISource(const char filename[], const char pixel_type[], const char 
             if (output_alpha)
                 alpha_frame = vsapi->newVideoFrame(&vi[1].format, vi[1].width, vi[1].height, nullptr, core);
             LRESULT error = DecompressFrame(keyframe, false, dropped_frame, frame, alpha_frame, core, vsapi);
-            if (error != ICERR_OK)   // shutdown, if init not succesful.
+            if (error != ICERR_OK)   // shutdown, if init not successful.
                 throw std::runtime_error("AviSource: Could not decompress frame 0");
 
             // Cope with dud AVI files that start with drop
@@ -663,7 +663,7 @@ AVISource::AVISource(const char filename[], const char pixel_type[], const char 
             if (dropped_frame) {
                 keyframe = pvideo->NextKeyFrame(0);
                 error = DecompressFrame(keyframe, false, dropped_frame, frame, alpha_frame, core, vsapi);
-                if (error != ICERR_OK) {   // shutdown, if init not succesful.
+                if (error != ICERR_OK) {   // shutdown, if init not successful.
                     sprintf(buf, "AviSource: Could not decompress first keyframe %d", keyframe);
                     throw std::runtime_error(buf);
                 }

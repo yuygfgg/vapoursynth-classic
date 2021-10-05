@@ -4,3 +4,4 @@ static bool funcToLut(int nin, int nout, void *vlut, VSFunction *func, const VSA
             size_t equalsPos = aLine.find("=");
                 fprintf(stderr, "No value specified for argument: %s\n", aLine.c_str());
             opts.scriptArgs[aLine.substr(0, equalsPos)] = aLine.substr(equalsPos + 1);
+            ba bb bc bd be bf bg bh bi bj bk bl bm bn bo bp

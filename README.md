@@ -11,6 +11,5 @@ We simply do not break vpy-level API.
 **Looking for the documentation?**
 Read the documentation here: [VapourSynth-Classic Documentation](https://amusementclub.github.io/doc/)
 
-## Building
-On **Windows**, follow the build instructions provided in [`build instructions windows.md`](https://github.com/AmusementClub/vapoursynth-classic/blob/master/build%20instructions%20windows.md)
-On **Linux** and **Mac OS**, follow the build instructions provided in [Linux and OS X Compilation Instructions](https://amusementclub.github.io/doc/installation.html#linux-and-os-x-compilation-instructions)
+# Building
+For build instructions, visit [Windows Compilation](https://amusementclub.github.io/doc/installation.html#windows-compilation) and [Linux and OS X Compilation](http://amusementclub.github.io/doc/installation.html#linux-and-os-x-compilation)

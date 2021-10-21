@@ -2513,8 +2513,13 @@ cdef class Function(object):
         atypes = {}
         # remove _ from all args
         for key in kwargs:
+            if key[0] == '_':
+                if not (self.plugin.namespace == 'std' and self.name == 'SetFrameProps'):
+                    nkey = key[1:]
+                else:
+                    nkey = key
             # PEP8 tells us single_trailing_underscore_ for collisions with Python-keywords.
-            if key[-1] == "_":
+            elif key[-1] == "_":
                 nkey = key[:-1]
             else:
                 nkey = key

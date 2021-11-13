@@ -810,7 +810,8 @@ VSMap *VSPluginFunction::invoke(const VSMap &args) {
 
         bool enableGraphInspection = plugin->core->enableGraphInspection;
         if (enableGraphInspection) {
-            plugin->core->functionFrame = std::make_shared<VSFunctionFrame>(name, new VSMap(&args), plugin->core->functionFrame);
+            std::string fullName = plugin->getNamespace() + "." + name;
+            plugin->core->functionFrame = std::make_shared<VSFunctionFrame>(fullName, new VSMap(&args), plugin->core->functionFrame);
         }
         func(&args, v, functionData, plugin->core, getVSAPIInternal(plugin->apiMajor));
         if (enableGraphInspection) {

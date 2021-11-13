@@ -109,6 +109,7 @@ struct VSPipeOptions {
     bool printProgress = false;
     bool printFilterTime = false;
     bool calculateMD5 = false;
+    bool preserveCwd = false;
     nstring scriptFilename;
     nstring outputFilename;
     nstring timecodesFilename;
@@ -654,6 +655,7 @@ static void printHelp() {
         "  -o, --outputindex N              Select output index\n"
         "  -r, --requests N                 Set number of concurrent frame requests\n"
         "  -c, --container <y4m/wav/w64>    Add headers for the specified format to the output\n"
+        "  -c, --preserve-cwd               Don't temporarily change the working directory the script path\n"
         "  -t, --timecodes FILE             Write timecodes v2 file\n"
         "  -p, --progress                   Print progress to stderr\n"
         "      --filter-time                Prints time spent in individual filters after processing\n"
@@ -688,8 +690,14 @@ static int parseOptions(VSPipeOptions &opts, int argc, T **argv) {
             }
 
             opts.mode = VSPipeMode::PrintVersion;
+        } else if (argString == NSTRING("--preserve-cwd")) {
+            opts.preserveCwd = true;
         } else if (argString == NSTRING("-c") || argString == NSTRING("--container")) {
             if (argc <= arg + 1) {
+                if (argString == NSTRING("-c")) {
+                    opts.preserveCwd = true;
+                    continue;
+                }
                 fprintf(stderr, "No container type specified\n");
                 return 1;
             }
@@ -701,6 +709,10 @@ static int parseOptions(VSPipeOptions &opts, int argc, T **argv) {
             } else if (nstringToUtf8(argv[arg + 1]) == "w64") {
                 opts.outputHeaders = VSPipeHeaders::WAVE64;
             } else {
+                if (argString == NSTRING("-c")) {
+                    opts.preserveCwd = true;
+                    continue;
+                }
                 fprintf(stderr, "Unknown container type specified: %s\n", nstringToUtf8(argv[arg + 1]).c_str());
                 return 1;
             }
@@ -936,7 +948,7 @@ int main(int argc, char **argv) {
     VSCore *core = vsapi->createCore((opts.mode == VSPipeMode::PrintSimpleGraph || opts.mode == VSPipeMode::PrintFullGraph || opts.printFilterTime) ? ccfEnableGraphInspection : 0);
     vsapi->addLogHandler(logMessageHandler, nullptr, nullptr, core);
     VSScript *se = vssapi->createScript(core);
-    vssapi->evalSetWorkingDir(se, 1);
+    vssapi->evalSetWorkingDir(se, opts.preserveCwd ? 0:1);
     if (!opts.scriptArgs.empty()) {
         VSMap *foldedArgs = vsapi->createMap();
         for (const auto &iter : opts.scriptArgs)

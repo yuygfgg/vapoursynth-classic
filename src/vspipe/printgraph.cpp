@@ -166,7 +166,7 @@ static void printNodeTimesHelper(std::list<NodeTimeRecord> &lines, std::set<VSNo
     if (!visited.insert(node).second)
         return;
 
-    lines.push_back(NodeTimeRecord{ vsapi->getNodeName(node), vsapi->getNodeFilterMode(node), vsapi->getNodeFilterTime(node) } );
+    lines.push_back(NodeTimeRecord{ vsapi->getNodeCreationFunctionName(node, 0), vsapi->getNodeFilterMode(node), vsapi->getNodeFilterTime(node) } );
 
     int numDeps = vsapi->getNumNodeDependencies(node);
     const VSFilterDependency *deps = vsapi->getNodeDependencies(node);

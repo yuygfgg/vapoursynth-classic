@@ -1333,6 +1333,11 @@ cdef class VideoFrame(RawFrame):
         s += '\tHeight: ' + str(self.height) + '\n'
         return s
 
+    def planes(self): # undocumented api3
+        cdef int x
+        for x in range(self.format.num_planes):
+            yield VideoPlane.__new__(VideoPlane, self, x)
+
     def get_read_array(self, int index):
         return memoryview2(self.__getitem__(index), True)
     def get_write_array(self, int index):
@@ -1367,6 +1372,27 @@ cdef VideoFrame createVideoFrame(VSFrame *f, const VSAPI *funcs, VSCore *core):
     instance.props = createFrameProps(instance)
     return instance
 
+# done: undeprecate this
+cdef class VideoPlane:
+    cdef:
+        object data
+
+    def __cinit__(self, *args, **kwargs):
+        self.data = VideoFrame.__getitem__(*args, **kwargs)
+
+    @property
+    def width(self):
+        """Plane's pixel width."""
+        return PyMemoryView_GET_BUFFER(self.data).shape[1]
+
+    @property
+    def height(self):
+        """Plane's pixel height."""
+        return PyMemoryView_GET_BUFFER(self.data).shape[0]
+
+    def __getbuffer__(self, Py_buffer* view, int flags):
+        # forward the request to the memoryview instance
+        PyObject_GetBuffer(self.data, view, flags)
 
 @cython.final
 @cython.internal

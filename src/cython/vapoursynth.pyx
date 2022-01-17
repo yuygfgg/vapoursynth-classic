@@ -2492,9 +2492,18 @@ cdef class Plugin(object):
                 return True
         return False
 
-    def _register_func(self, name, args, returnType, func, *, override=False):
-        if not override and name in self.__dir__():
+    def _register_func(self, name, args, returnType, func, *, override=False): # 'vs-c'
+        myfuncs = self.__dir__()
+        if not override and name in myfuncs:
             raise Error('cannot override existing filter "' + name + '" without explicitly setting override.')
+        if override:
+            if isinstance(override, str):
+                newname = override
+            else:
+                newname = '_' + name
+            if newname in myfuncs:
+                raise Error('renamed function "' + newname + '" already exists')
+
         if _vscapi == NULL:
             getVSAPIInternal()
 
@@ -2526,7 +2535,7 @@ cdef class Plugin(object):
         cdef bint ro = _vscapi.pluginSetRO(self.plugin, 0)
         cdef const char *cnewname = NULL
         if override:
-            tnewname = ('_' + name).encode('utf-8')
+            tnewname = newname.encode('utf-8')
             cnewname = tnewname
             if not _vscapi.pluginRenameFunc(self.plugin, cname, cnewname):
                 raise Error('failed to rename existing filter')

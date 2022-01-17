@@ -388,3 +388,11 @@ cdef extern from "include/VapourSynth4.h" nogil:
         bint removeLogHandler(VSLogHandle *handle, VSCore *core) nogil
                 
     const VSAPI *getVapourSynthAPI(int version) nogil
+
+cdef extern from "include/VapourSynthC.h" nogil:
+    enum:
+        VAPOURSYNTHC_API_VERSION
+    ctypedef struct VSCAPI:
+        int getPluginAPIVersion(VSPlugin *) nogil
+        int pluginSetRO(VSPlugin *, int) nogil
+        int pluginRenameFunc(VSPlugin *, const char *, const char *) nogil

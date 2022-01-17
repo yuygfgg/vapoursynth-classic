@@ -2493,6 +2493,15 @@ cdef class Plugin(object):
         return False
 
     def _register_func(self, name, args, returnType, func, *, override=False): # 'vs-c'
+        if os.getenv('VSC_DEBUG_REGISTER_FUNC'):
+            dbgname = '%s.%s' % (self.namespace, name)
+            print('[VS-C]: registering %s(%s) -> %s, override=%r' % (dbgname, args, returnType, override), file=sys.stderr)
+            traceback.print_stack()
+            func_ = func
+            def wrapped(**args):
+                print('[VS-C] registered Python filter %s called with %r' % (dbgname, args), file=sys.stderr)
+                return func_(**args)
+            func = wrapped
         myfuncs = self.__dir__()
         if not override and name in myfuncs:
             raise Error('cannot override existing filter "' + name + '" without explicitly setting override.')

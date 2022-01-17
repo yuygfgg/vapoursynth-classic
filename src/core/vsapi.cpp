@@ -1315,10 +1315,23 @@ static int VS_CC pluginRenameFunc(VSPlugin *plugin, const char *oldname, const c
     if (!func) return false;
     return func->rename(newname);
 }
+void VSCore::addPlugin(const std::string &name, VSPlugin *plugin) {
+    std::lock_guard<std::recursive_mutex> lock(pluginLock);
+    plugins.emplace(name, plugin);
+}
+static VSPlugin *VS_CC createPlugin(const char *id, const char *ns, int version, VSCore *core) {
+    assert(id && ns && core);
+    VSPlugin *p = new VSPlugin(core);
+    vs_internal_vspapi.configPlugin(id, ns, "python plugin", version, VAPOURSYNTH_API_VERSION, 0, p);
+    p->lock();
+    core->addPlugin(ns, p);
+    return p;
+}
 static const VSCAPI vsc_internal_api = {
     &getPluginAPIVersion,
     &pluginSetRO,
     &pluginRenameFunc,
+    &createPlugin,
 };
 ///////////////////////////////
 

@@ -396,3 +396,4 @@ cdef extern from "include/VapourSynthC.h" nogil:
         int getPluginAPIVersion(VSPlugin *) nogil
         int pluginSetRO(VSPlugin *, int) nogil
         int pluginRenameFunc(VSPlugin *, const char *, const char *) nogil
+        VSPlugin *createPlugin(const char *id, const char *ns, int version, VSCore *core) nogil

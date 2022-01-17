@@ -2338,6 +2338,18 @@ cdef class Core(object):
         s += '\tNumber of Threads: ' + str(self.num_threads) + '\n'
         return s
 
+    def _create_plugin(self, id, ns, int version=0): # 'vs-c'
+        if os.getenv('VSC_DEBUG_REGISTER_FUNC'):
+            print('[VS-C]: creating plugin %s: id=%s, version=%d' % (ns, id, version), file=sys.stderr)
+        if _vscapi == NULL:
+            getVSAPIInternal()
+        tid = id.encode('utf-8')
+        cdef const char *cid = tid
+        tns = ns.encode('utf-8')
+        cdef const char *cns = tns
+        cdef VSPlugin *p = _vscapi.createPlugin(cid, cns, version, self.core)
+        return createPlugin(p, self.funcs, self)
+
 cdef object createNode(VSNode *node, const VSAPI *funcs, Core core):
     if funcs.getNodeType(node) == VIDEO:
         return createVideoNode(node, funcs, core)

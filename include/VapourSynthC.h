@@ -31,6 +31,7 @@ typedef struct VSCAPI {
     int (VS_CC *getPluginAPIVersion)(const VSPlugin *); // major version only
     int (VS_CC *pluginSetRO)(VSPlugin *, int readonly); // returns old status
     int (VS_CC *pluginRenameFunc)(VSPlugin *, const char *oldname, const char *newname);
+    VSPlugin *(VS_CC *createPlugin)(const char *id, const char *ns, int version, VSCore *core);
 } VSCAPI;
 
 #endif /* VAPOURSYNTHC_H */

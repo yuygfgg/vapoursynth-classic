@@ -1166,6 +1166,8 @@ public:
 
     explicit VSCore(int flags);
     void freeCore();
+
+    void addPlugin(const std::string &name, VSPlugin *plugin); // 'vs-c'
 };
 
 #endif // VSCORE_H

@@ -2553,6 +2553,10 @@ cdef class Plugin(object):
         Py_INCREF(fdata)
 
         cdef bint ret = self.funcs.registerFunction(cname, cargs, crett, publicFilterFunction, <void *>fdata, self.plugin)
+        if not ret:
+            if cnewname != NULL:
+                assert _vscapi.pluginRenameFunc(self.plugin, cnewname, cname), 'failed to restore old filter name'
+            Py_DECREF(fdata)
         if ro:
             _vscapi.pluginSetRO(self.plugin, 1)
         return ret

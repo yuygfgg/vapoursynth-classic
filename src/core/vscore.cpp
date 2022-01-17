@@ -814,7 +814,8 @@ VSMap *VSPluginFunction::invoke(const VSMap &args) {
 
         bool enableGraphInspection = plugin->core->enableGraphInspection;
         if (enableGraphInspection) {
-            plugin->core->functionFrame = std::make_shared<VSFunctionFrame>(name, new VSMap(&args), plugin->core->functionFrame);
+            std::string fullName = plugin->getNamespace() + "." + name;
+            plugin->core->functionFrame = std::make_shared<VSFunctionFrame>(fullName, new VSMap(&args), plugin->core->functionFrame);
         }
 
 #ifdef VS_PROFILE_CREATE
@@ -843,10 +844,10 @@ VSMap *VSPluginFunction::invoke(const VSMap &args) {
 
 bool VSPluginFunction::isV3Compatible() const {
     for (const auto &iter : inArgs)
-        if (iter.type == ptAudioNode || iter.type == ptAudioFrame)
+        if (iter.type == ptAudioNode || iter.type == ptAudioFrame || iter.type == ptUnset)
             return false;
     for (const auto &iter : retArgs)
-        if (iter.type == ptAudioNode || iter.type == ptAudioFrame)
+        if (iter.type == ptAudioNode || iter.type == ptAudioFrame || iter.type == ptUnset)
             return false;
     return true;
 }
@@ -1142,9 +1143,8 @@ void VSNode::setVideoInfo3(const vs3::VSVideoInfo *vi, int numOutputs) {
         core->logFatal("setVideoInfo: The frame rate specified by " + name + " must be a reduced fraction. Instead, it is " + std::to_string(vi->fpsNum) + "/" + std::to_string(vi->fpsDen) + ")");
 
     this->v3vi = *vi;
-    this->v3vi.flags = 0;
+    this->v3vi.flags = vs3::nfNoCache | vs3::nfIsCache;
     this->vi = core->VideoInfoFromV3(this->v3vi);
-
 
     refcount = numOutputs;
 }
@@ -1405,7 +1405,7 @@ bool VSCore::getVideoFormatByID(VSVideoFormat &f, uint32_t id) noexcept {
 }
 
 uint32_t VSCore::queryVideoFormatID(VSColorFamily colorFamily, VSSampleType sampleType, int bitsPerSample, int subSamplingW, int subSamplingH) const noexcept {
-    if (!isValidVideoFormat(colorFamily, sampleType, bitsPerSample, subSamplingW, subSamplingH))
+    if (!isValidVideoFormat(colorFamily, sampleType, bitsPerSample, subSamplingW, subSamplingH) || colorFamily == cfUndefined)
         return 0;
     return ((colorFamily & 0xF) << 28) | ((sampleType & 0xF) << 24) | ((bitsPerSample & 0xFF) << 16) | ((subSamplingW & 0xFF) << 8) | ((subSamplingH & 0xFF) << 0);
 }
@@ -1600,7 +1600,7 @@ bool VSCore::isValidVideoFormat(int colorFamily, int sampleType, int bitsPerSamp
     if (colorFamily != cfUndefined && colorFamily != cfGray && colorFamily != cfYUV && colorFamily != cfRGB)
         return false;
 
-    if (colorFamily == cfUndefined && (subSamplingH != 0 || subSamplingW != 0 || bitsPerSample != 0 || sampleType != stInteger))
+    if (colorFamily == cfUndefined && subSamplingH == 0 && subSamplingW == 0 && bitsPerSample == 0 && sampleType == stInteger)
         return true;
 
     if (sampleType != stInteger && sampleType != stFloat)
@@ -1624,6 +1624,9 @@ bool VSCore::isValidVideoFormat(int colorFamily, int sampleType, int bitsPerSamp
 bool VSCore::isValidVideoFormat(const VSVideoFormat &format) noexcept {
     if (!isValidVideoFormat(format.colorFamily, format.sampleType, format.bitsPerSample, format.subSamplingW, format.subSamplingH))
         return false;
+
+    if (format.colorFamily == cfUndefined)
+        return (format.bytesPerSample == 0 && format.numPlanes == 0);
 
     if (format.numPlanes != ((format.colorFamily == cfYUV || format.colorFamily == cfRGB) ? 3 : 1))
         return false;
@@ -1734,7 +1737,10 @@ vs3::VSColorFamily VSCore::ColorFamilyToV3(int colorFamily) noexcept {
 }
 
 const vs3::VSVideoFormat *VSCore::VideoFormatToV3(const VSVideoFormat &format) noexcept {
-    return queryVideoFormat3(ColorFamilyToV3(format.colorFamily), static_cast<VSSampleType>(format.sampleType), format.bitsPerSample, format.subSamplingW, format.subSamplingH);
+    if (format.colorFamily == cfUndefined)
+        return nullptr;
+    else
+        return queryVideoFormat3(ColorFamilyToV3(format.colorFamily), static_cast<VSSampleType>(format.sampleType), format.bitsPerSample, format.subSamplingW, format.subSamplingH);
 }
 
 bool VSCore::VideoFormatFromV3(VSVideoFormat &out, const vs3::VSVideoFormat *format) noexcept {
@@ -1752,6 +1758,7 @@ vs3::VSVideoInfo VSCore::VideoInfoToV3(const VSVideoInfo &vi) noexcept {
     v3.numFrames = vi.numFrames;
     v3.width = vi.width;
     v3.height = vi.height;
+    v3.flags = vs3::nfNoCache | vs3::nfIsCache;
     return v3;
 }
 
@@ -2354,12 +2361,8 @@ VSPlugin::VSPlugin(const std::string &relFilename, const std::string &forcedName
 #ifdef VS_TARGET_OS_WINDOWS
     std::wstring wPath = utf16_from_utf8(relFilename);
     std::vector<wchar_t> fullPathBuffer(32767 + 1); // add 1 since msdn sucks at mentioning whether or not it includes the final null
-    if (wPath.substr(0, 4) != L"\\\\?\\")
-        wPath = L"\\\\?\\" + wPath;
-    GetFullPathName(wPath.c_str(), static_cast<DWORD>(fullPathBuffer.size()), fullPathBuffer.data(), nullptr);
+    GetFullPathNameW(wPath.c_str(), static_cast<DWORD>(fullPathBuffer.size()), fullPathBuffer.data(), nullptr);
     wPath = fullPathBuffer.data();
-    if (wPath.substr(0, 4) == L"\\\\?\\")
-        wPath = wPath.substr(4);
     filename = utf16_to_utf8(wPath);
     for (auto &iter : filename)
         if (iter == '\\')

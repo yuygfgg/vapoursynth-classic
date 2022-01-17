@@ -136,7 +136,7 @@ It is a rewrite of some of tritical's TIVTC filters.
          
          5 = 3-way match + 4th/5th matches on combed (p/c/n + u/b)
 
-         The parantheses at the end indicate the matches that would be used
+         The parentheses at the end indicate the matches that would be used
          for each mode assuming order=1 and field=1.
 
          Default: 1.

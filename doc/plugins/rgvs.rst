@@ -205,7 +205,7 @@ RGVS
    Let b1, b2, c, t1, t2 be a vertical sequence of pixels. The center pixel c is
    to be modified in terms of the 4 neighbours. For simplicity let us assume
    that b2 <= t1. Then in mode 1, c is clipped with respect to b2 and t1, i.e. c
-   is replaced by max(b2, min(c, t1)). In mode 2 the clipping intervall is
+   is replaced by max(b2, min(c, t1)). In mode 2 the clipping interval is
    widened, i.e. mode 2 is more conservative than mode 1. If b2 > b1 and t1 > t2,
    then c is replaced by max(b2, min(c, max(t1,d1))), where d1 = min(b2 + (b2 -
    b1), t1 + (t1 - t2)). In other words, only if the gradient towards the center

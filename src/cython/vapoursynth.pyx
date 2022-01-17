@@ -18,7 +18,7 @@
 """ This is the VapourSynth module implementing the Python bindings. """
 
 cimport vapoursynth
-cimport vsconstants
+include 'vsconstants.pxd'
 from vsscript_internal cimport VSScript
 cimport cython.parallel
 from cython cimport view, final
@@ -46,6 +46,7 @@ import weakref
 import atexit
 import contextlib
 import logging
+import functools
 from threading import local as ThreadLocal, Lock, RLock
 from types import MappingProxyType
 from collections import namedtuple
@@ -61,7 +62,7 @@ except ImportError as e:
 
 __all__ = [
   'GRAY',
-    'GRAY8', 'GRAY9', 'GRAY10', 'GRAY12', 'GRAY14', 'GRAY16', 'GRAYH', 'GRAYS',
+    'GRAY8', 'GRAY9', 'GRAY10', 'GRAY12', 'GRAY14', 'GRAY16', 'GRAY32', 'GRAYH', 'GRAYS',
   'RGB',
     'RGB24', 'RGB27', 'RGB30', 'RGB36', 'RGB42', 'RGB48', 'RGBH', 'RGBS',
   'YUV',
@@ -72,6 +73,7 @@ __all__ = [
     'YUV440P8',
     'YUV444P8', 'YUV444P9', 'YUV444P10', 'YUV444P12', 'YUV444P14', 'YUV444P16', 'YUV444PH', 'YUV444PS',
   'NONE',
+  
   'FLOAT', 'INTEGER',
   
   'RANGE_FULL', 'RANGE_LIMITED',
@@ -86,7 +88,7 @@ __all__ = [
   'core', 
 ]
     
-__version__ = namedtuple("VapourSynthVersion", "release_major release_minor")(55, 0)
+__version__ = namedtuple("VapourSynthVersion", "release_major release_minor")(57, 0)
 __api_version__ = namedtuple("VapourSynthAPIVersion", "api_major api_minor")(VAPOURSYNTH_API_MAJOR, VAPOURSYNTH_API_MINOR)
 
 
@@ -490,6 +492,12 @@ def _construct_type(signature):
     return type
 
 def _construct_parameter(signature):
+    if signature == "any":
+        return inspect.Parameter(
+            "kwargs", inspect.Parameter.VAR_KEYWORD,
+            annotation=typing.Any
+        )
+
     name, signature = signature.split(":", 1)
     type = _construct_type(signature)
     
@@ -516,11 +524,24 @@ def construct_signature(signature, return_signature, injected=None):
         for param in signature.split(";")
         if param
     )
-    
+
     if injected:
         del params[0]
-    
-    return inspect.Signature(tuple(params), return_annotation=_construct_type(return_signature))
+
+    return_annotations = list(
+        _construct_parameter(rparam).annotation
+        for rparam in return_signature.split(";")
+        if rparam
+    )
+
+    if len(return_annotations) == 0:
+        return_annotation = None
+    elif len(return_annotations) == 1:
+        return_annotation = return_annotations.pop()
+    else:
+        return_annotation = typing.Tuple[typing.Any, ...]
+
+    return inspect.Signature(tuple(params), return_annotation=return_annotation)
     
 
 class Error(Exception):
@@ -646,18 +667,20 @@ cdef class CallbackData(object):
     def for_future(self, object future, object wrap_call=None):
         if wrap_call is None:
             wrap_call = lambda func, *args, **kwargs: func(*args, **kwargs)
-        self.callback = self.handle_future
+        self.callback = functools.partial(CallbackData.handle_future,
+                                          self.env, future, wrap_call)
         self.future = future
         self.wrap_cb = wrap_call
 
-    def handle_future(self, node, n, result):
+    @staticmethod
+    def handle_future(env, future, wrapper, node, n, result):
         if isinstance(result, Error):
-            func = self.future.set_exception
+            func = future.set_exception
         else:
-            func = self.future.set_result
+            func = future.set_result
 
-        with use_environment(self.env).use():
-            self.wrap_cb(func, result)
+        with use_environment(env).use():
+            wrapper(func, result)
 
     def receive(self, n, result):
         self.callback(self.node, n, result)
@@ -1310,6 +1333,11 @@ cdef class VideoFrame(RawFrame):
         s += '\tHeight: ' + str(self.height) + '\n'
         return s
 
+    def planes(self): # undocumented api3
+        cdef int x
+        for x in range(self.format.num_planes):
+            yield VideoPlane.__new__(VideoPlane, self, x)
+
     def get_read_array(self, int index):
         return memoryview2(self.__getitem__(index), True)
     def get_write_array(self, int index):
@@ -1344,6 +1372,27 @@ cdef VideoFrame createVideoFrame(VSFrame *f, const VSAPI *funcs, VSCore *core):
     instance.props = createFrameProps(instance)
     return instance
 
+# done: undeprecate this
+cdef class VideoPlane:
+    cdef:
+        object data
+
+    def __cinit__(self, *args, **kwargs):
+        self.data = VideoFrame.__getitem__(*args, **kwargs)
+
+    @property
+    def width(self):
+        """Plane's pixel width."""
+        return PyMemoryView_GET_BUFFER(self.data).shape[1]
+
+    @property
+    def height(self):
+        """Plane's pixel height."""
+        return PyMemoryView_GET_BUFFER(self.data).shape[0]
+
+    def __getbuffer__(self, Py_buffer* view, int flags):
+        # forward the request to the memoryview instance
+        PyObject_GetBuffer(self.data, view, flags)
 
 @cython.final
 @cython.internal
@@ -1496,7 +1545,6 @@ cdef AudioFrame createConstAudioFrame(const VSFrame *constf, const VSAPI *funcs,
     instance.bytes_per_sample = format.bytesPerSample
     instance.channel_layout = format.channelLayout
     instance.num_channels = format.numChannels
-    instance.props = createFrameProps(instance)
     return instance
 
 
@@ -1513,7 +1561,6 @@ cdef AudioFrame createAudioFrame(VSFrame *f, const VSAPI *funcs, VSCore *core):
     instance.bytes_per_sample = format.bytesPerSample
     instance.channel_layout = format.channelLayout
     instance.num_channels = format.numChannels
-    instance.props = createFrameProps(instance)
     return instance
 
 
@@ -2123,6 +2170,7 @@ cdef LogHandle createLogHandle(object handler_func):
     cdef LogHandle instance = LogHandle.__new__(LogHandle)
     instance.handler_func = handler_func
     instance.handle = NULL
+    return instance
      
 cdef void __stdcall log_handler_wrapper(int msgType, const char *msg, void *userData) nogil:
     with gil:
@@ -2135,7 +2183,7 @@ cdef void __stdcall log_handler_free(void *userData) nogil:
 cdef class Core(object):
     cdef VSCore *core
     cdef const VSAPI *funcs
-    cdef public bint add_cache  # only for compatbility with R54 scripts, no effect.
+    cdef public bint add_cache  # only for compatibility with R54 scripts, no effect.
 
     cdef object __weakref__
 
@@ -2490,7 +2538,10 @@ cdef class Function(object):
         # remove _ from all args
         for key in kwargs:
             if key[0] == '_':
-                nkey = key[1:]
+                if not (self.plugin.namespace == 'std' and self.name == 'SetFrameProps'):
+                    nkey = key[1:]
+                else:
+                    nkey = key
             # PEP8 tells us single_trailing_underscore_ for collisions with Python-keywords.
             elif key[-1] == "_":
                 nkey = key[:-1]
@@ -2762,7 +2813,7 @@ cdef object _vsscript_use_or_create_environment(int id):
 
 @contextlib.contextmanager
 def __chdir(filename, flags):
-    if (flags&1) or filename is None or (filename.startswith("<") and filename.endswith(">")):
+    if ((flags&1) == 0) or (filename is None) or (filename.startswith("<") and filename.endswith(">")):
         return (yield)
     
     origpath = os.getcwd()
@@ -2890,8 +2941,12 @@ cdef public api int vpy4_evaluateBuffer(VSScript *se, const char *buffer, const 
             fn = None
             if scriptFilename:
                 fn = scriptFilename.decode('utf-8')
-
-            return _vpy_evaluate(se, buffer, fn)
+            
+            if se.setCWD:
+                with __chdir(fn, 1):
+                    return _vpy_evaluate(se, buffer, fn)
+            else:
+                return _vpy_evaluate(se, buffer, fn)
 
         except BaseException, e:
             errstr = 'File reading exception:\n' + str(e)

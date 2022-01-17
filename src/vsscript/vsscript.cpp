@@ -69,6 +69,14 @@ static void real_init(void) VS_NOEXCEPT {
 
     HMODULE pythonDll = nullptr;
 
+/*
+#ifdef VS_TARGET_OS_WINDOWS
+    _wputenv(L"PYTHONMALLOC=malloc");
+#else
+    setenv("PYTHONMALLOC", "malloc", 1);
+#endif
+*/
+
     if (isPortable) {
         std::wstring pyPath = dllPath + L"\\" + pythonDllName;
         pythonDll = LoadLibraryExW(pyPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
@@ -300,6 +308,10 @@ VS_API(int) vsscript_setVariable(VSScript *handle, const VSMap *vars) VS_NOEXCEP
     return vpy4_setVariables(handle, vars);
 }
 
+static void VS_CC evalSetWorkingDir(VSScript *handle, int setCWD) VS_NOEXCEPT {
+    handle->setCWD = setCWD;
+}
+
 // V3 API compatibility
 VS_API(int) vsscript_clearVariable(VSScript *handle, const char *name) VS_NOEXCEPT {
     std::lock_guard<std::mutex> lock(vsscriptlock);
@@ -326,7 +338,8 @@ static VSSCRIPTAPI vsscript_api = {
     &getOutputNode,
     &getOutputAlphaNode,
     &getAltOutputMode,
-    &vsscript_freeScript
+    &vsscript_freeScript,
+    &evalSetWorkingDir
 };
 
 const VSSCRIPTAPI *VS_CC getVSScriptAPI(int version) VS_NOEXCEPT {

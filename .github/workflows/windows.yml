@@ -32,7 +32,11 @@ jobs:
         git clone https://github.com/vapoursynth/vsrepo --depth 1
         git clone https://github.com/sekrit-twc/zimg --branch v3.0 --depth 1
         git clone https://github.com/AviSynth/AviSynthPlus.git --depth 1
-        git clone https://github.com/sekrit-twc/libp2p --depth 1
+        # just before the update to v143 toolset (MSVC 2022)
+        git clone https://github.com/sekrit-twc/libp2p
+        pushd libp2p
+        git checkout 10f88fcc811db84a2f25b4b87729d58a569b2486
+        popd
         git clone https://github.com/microsoft/mimalloc --branch v2.0.1 --depth 1
 
     - name: Build mimalloc

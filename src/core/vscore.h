@@ -1006,6 +1006,7 @@ public:
     bool isV3Compatible() const;
     std::string getV4ArgString() const;
     std::string getV3ArgString() const;
+    bool rename(const std::string &newname); // 'vs-c'
 };
 
 
@@ -1035,6 +1036,8 @@ public:
     VSPlugin(const std::string &relFilename, const std::string &forcedNamespace, const std::string &forcedId, bool altSearchPath, VSCore *core);
     ~VSPlugin();
     void lock() { readOnly = true; }
+    void unlock() { readOnly = false; } // 'vs-c'
+    bool isLocked() const { return readOnly; } // 'vs-c'
     bool configPlugin(const std::string &identifier, const std::string &pluginsNamespace, const std::string &fullname, int pluginVersion, int apiVersion, int flags);
     bool registerFunction(const std::string &name, const std::string &args, const std::string &returnType, VSPublicFunction argsFunc, void *functionData);
     VSMap *invoke(const std::string &funcName, const VSMap &args);
@@ -1045,6 +1048,7 @@ public:
     const std::string &getNamespace() const { return fnamespace; }
     const std::string &getFilename() const { return filename; }
     int getPluginVersion() const { return pluginVersion; }
+    int getAPIVersion() const { return apiMajor; } // 'vs-c'
     void getFunctions3(VSMap *out) const;
 };
 
@@ -1163,6 +1167,8 @@ public:
 
     explicit VSCore(int flags);
     void freeCore();
+
+    void addPlugin(const std::string &name, VSPlugin *plugin); // 'vs-c'
 };
 
 #endif // VSCORE_H

@@ -171,6 +171,7 @@ cdef class StandaloneEnvironmentPolicy:
 cdef object _policy = None
 
 cdef const VSAPI *_vsapi = NULL
+cdef const VSCAPI *_vscapi = NULL
 
 
 cdef void _set_logger(EnvironmentData env, VSLogHandler handler, VSLogHandlerFree free, void *userData):
@@ -2337,6 +2338,18 @@ cdef class Core(object):
         s += '\tNumber of Threads: ' + str(self.num_threads) + '\n'
         return s
 
+    def _create_plugin(self, id, ns, int version=0): # 'vs-c'
+        if os.getenv('VSC_DEBUG_REGISTER_FUNC'):
+            print('[VS-C]: creating plugin %s: id=%s, version=%d' % (ns, id, version), file=sys.stderr)
+        if _vscapi == NULL:
+            getVSAPIInternal()
+        tid = id.encode('utf-8')
+        cdef const char *cid = tid
+        tns = ns.encode('utf-8')
+        cdef const char *cns = tns
+        cdef VSPlugin *p = _vscapi.createPlugin(cid, cns, version, self.core)
+        return createPlugin(p, self.funcs, self)
+
 cdef object createNode(VSNode *node, const VSAPI *funcs, Core core):
     if funcs.getNodeType(node) == VIDEO:
         return createVideoNode(node, funcs, core)
@@ -2490,6 +2503,106 @@ cdef class Plugin(object):
             if (<Function>func).is_audio_injectable():
                 return True
         return False
+
+    def _register_func(self, name, args, returnType, func, *, override=False): # 'vs-c'
+        if os.getenv('VSC_DEBUG_REGISTER_FUNC'):
+            dbgname = '%s.%s' % (self.namespace, name)
+            print('[VS-C]: registering %s(%s) -> %s, override=%r' % (dbgname, args, returnType, override), file=sys.stderr)
+            traceback.print_stack()
+            func_ = func
+            def wrapped(**args):
+                print('[VS-C] registered Python filter %s called with %r' % (dbgname, args), file=sys.stderr)
+                return func_(**args)
+            func = wrapped
+        myfuncs = self.__dir__()
+        if not override and name in myfuncs:
+            raise Error('cannot override existing filter "' + name + '" without explicitly setting override.')
+        if override:
+            if isinstance(override, str):
+                newname = override
+            else:
+                newname = '_' + name
+            if newname in myfuncs:
+                raise Error('renamed function "' + newname + '" already exists')
+
+        if _vscapi == NULL:
+            getVSAPIInternal()
+
+        tname = name.encode('utf-8')
+        cdef const char *cname = tname
+
+        cdef int apiver = _vscapi.getPluginAPIVersion(self.plugin)
+        if apiver < VAPOURSYNTH_API_MAJOR:
+            args = args.replace(':vnode', ':clip').replace(':vframe', ':frame')
+            returnType = 'any'
+
+        cdef const char *cargs = NULL
+        cdef const char *crett = NULL
+
+        cdef VSPluginFunction *mfunc = self.funcs.getPluginFunctionByName(cname, self.plugin)
+        if (args is None or returnType is None) and mfunc == NULL:
+            raise Error('args or return type cannot be None unless the function already exists')
+        if args is None:
+            cargs = self.funcs.getPluginFunctionArguments(mfunc)
+        else:
+            targs = args.encode('utf-8')
+            cargs = targs
+        if returnType is None:
+            crett = self.funcs.getPluginFunctionReturnType(mfunc)
+        else:
+            trett = returnType.encode('utf-8')
+            crett = trett
+
+        cdef bint ro = _vscapi.pluginSetRO(self.plugin, 0)
+        cdef const char *cnewname = NULL
+        if override:
+            tnewname = newname.encode('utf-8')
+            cnewname = tnewname
+            if not _vscapi.pluginRenameFunc(self.plugin, cname, cnewname):
+                raise Error('failed to rename existing filter')
+
+        fdata = createFilterFuncData(func, self.core.core)
+        Py_INCREF(fdata)
+
+        cdef bint ret = self.funcs.registerFunction(cname, cargs, crett, publicFilterFunction, <void *>fdata, self.plugin)
+        if not ret:
+            if cnewname != NULL:
+                assert _vscapi.pluginRenameFunc(self.plugin, cnewname, cname), 'failed to restore old filter name'
+            Py_DECREF(fdata)
+        if ro:
+            _vscapi.pluginSetRO(self.plugin, 1)
+        return ret
+
+cdef class FilterFuncData(object):
+    cdef object func
+    cdef VSCore *core
+
+    def __init__(self):
+        raise Error('Class cannot be instantiated directly')
+
+    def __call__(self, **kwargs):
+        return self.func(**kwargs)
+
+cdef FuncData createFilterFuncData(object func, VSCore *core):
+    cdef FuncData instance = FuncData.__new__(FuncData)
+    instance.func = func
+    instance.core = core
+    return instance
+
+cdef void __stdcall publicFilterFunction(const VSMap *inm, VSMap *outm, void *userData, VSCore *core, const VSAPI *vsapi_do_not_use) nogil:
+    with gil:
+        d = <FilterFuncData>userData
+        try:
+            m = mapToDict(inm, False)
+            ret = d(**m)
+            if not isinstance(ret, dict):
+                if ret is None:
+                    ret = 0
+                ret = {'clip':ret}
+            dictToMap(ret, outm, core, _vsapi)
+        except BaseException, e:
+            emsg = str(e).encode('utf-8')
+            _vsapi.mapSetError(outm, emsg)
 
 cdef Plugin createPlugin(VSPlugin *plugin, const VSAPI *funcs, Core core):
     cdef Plugin instance = Plugin.__new__(Plugin)
@@ -3074,9 +3187,11 @@ cdef public api const VSAPI *vpy4_getVSAPI(int version) nogil:
     return getVapourSynthAPI(version)
     
 cdef const VSAPI *getVSAPIInternal() nogil:
-    global _vsapi
+    global _vsapi, _vscapi
     if _vsapi == NULL:
         _vsapi = getVapourSynthAPI(VAPOURSYNTH_API_VERSION)
+    if _vscapi == NULL:
+        _vscapi = <const VSCAPI *>getVapourSynthAPI(VAPOURSYNTHC_API_VERSION)
     return _vsapi
 
 cdef public api int vpy4_getVariable(VSScript *se, const char *name, VSMap *dst) nogil:

@@ -32,6 +32,10 @@
 #include <queue>
 #include <bitset>
 
+#ifdef VS_PROFILE_CREATE
+#include <iostream>
+#endif
+
 #ifdef VS_TARGET_CPU_X86
 #include "x86utils.h"
 #endif
@@ -813,7 +817,16 @@ VSMap *VSPluginFunction::invoke(const VSMap &args) {
             std::string fullName = plugin->getNamespace() + "." + name;
             plugin->core->functionFrame = std::make_shared<VSFunctionFrame>(fullName, new VSMap(&args), plugin->core->functionFrame);
         }
+
+#ifdef VS_PROFILE_CREATE
+        std::chrono::time_point<std::chrono::high_resolution_clock> startTime = std::chrono::high_resolution_clock::now();
+#endif
         func(&args, v, functionData, plugin->core, getVSAPIInternal(plugin->apiMajor));
+#ifdef VS_PROFILE_CREATE
+        std::chrono::nanoseconds duration = std::chrono::high_resolution_clock::now() - startTime;
+        std::cerr << this->plugin->fnamespace << "." << this->name << " uses " << 0.001 * (double)duration.count() << " us" << std::endl;
+#endif
+
         if (enableGraphInspection) {
             assert(plugin->core->functionFrame);
             plugin->core->functionFrame = plugin->core->functionFrame->next;

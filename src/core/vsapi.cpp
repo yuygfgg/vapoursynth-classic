@@ -22,6 +22,7 @@
 #include "cpufeatures.h"
 #include "vslog.h"
 #include "VSHelper4.h"
+#include "VapourSynthC.h"
 #include <cassert>
 #include <cstring>
 #include <string>
@@ -1279,6 +1280,60 @@ const vs3::VSAPI3 vs_internal_vsapi3 = {
 };
 
 ///////////////////////////////
+static int VS_CC getPluginAPIVersion(const VSPlugin *plugin) VS_NOEXCEPT {
+    assert(plugin);
+    if (!plugin)
+        return -1;
+    return plugin->getAPIVersion();
+}
+static int VS_CC pluginSetRO(VSPlugin *plugin, int readonly) VS_NOEXCEPT {
+    assert(plugin);
+    const bool old = plugin->isLocked();
+    if (readonly)
+        plugin->lock();
+    else
+        plugin->unlock();
+    return old;
+}
+bool VSPluginFunction::rename(const std::string &newname) {
+    if (name == newname)
+        return false;
+
+    std::lock_guard<std::mutex> lock(plugin->functionLock);
+
+    auto &funcs = plugin->funcs;
+    auto node = funcs.extract(name);
+    node.key() = newname;
+    funcs.insert(std::move(node));
+
+    name = newname;
+    return true;
+}
+static int VS_CC pluginRenameFunc(VSPlugin *plugin, const char *oldname, const char *newname) VS_NOEXCEPT {
+    assert(plugin && oldname && newname);
+    VSPluginFunction *func = plugin->getFunctionByName(oldname);
+    if (!func) return false;
+    return func->rename(newname);
+}
+void VSCore::addPlugin(const std::string &name, VSPlugin *plugin) {
+    std::lock_guard<std::recursive_mutex> lock(pluginLock);
+    plugins.emplace(name, plugin);
+}
+static VSPlugin *VS_CC createPlugin(const char *id, const char *ns, int version, VSCore *core) {
+    assert(id && ns && core);
+    VSPlugin *p = new VSPlugin(core);
+    vs_internal_vspapi.configPlugin(id, ns, "python plugin", version, VAPOURSYNTH_API_VERSION, 0, p);
+    p->lock();
+    core->addPlugin(ns, p);
+    return p;
+}
+static const VSCAPI vsc_internal_api = {
+    &getPluginAPIVersion,
+    &pluginSetRO,
+    &pluginRenameFunc,
+    &createPlugin,
+};
+///////////////////////////////
 
 const VSAPI *getVSAPIInternal(int apiMajor) {
     if (apiMajor == VAPOURSYNTH_API_MAJOR) {
@@ -1305,6 +1360,8 @@ const VSAPI *VS_CC getVapourSynthAPI(int version) VS_NOEXCEPT {
         return &vs_internal_vsapi;
     } else if (apiMajor == VAPOURSYNTH3_API_MAJOR && apiMinor <= VAPOURSYNTH3_API_MINOR) {
         return reinterpret_cast<const VSAPI *>(&vs_internal_vsapi3);
+    } else if (version == VAPOURSYNTHC_API_VERSION) {
+        return reinterpret_cast<const VSAPI *>(&vsc_internal_api);
     } else {
         return nullptr;
     }

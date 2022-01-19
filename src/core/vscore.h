@@ -964,6 +964,7 @@ private:
     size_t maxThreads;
     std::atomic<bool> stopThreads;
     std::atomic<size_t> ticks;
+    std::atomic<size_t> nextAdjTicks;
     size_t getNumAvailableThreads();
     void queueTask(const PVSFrameContext &ctx);
     void wakeThread();

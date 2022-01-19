@@ -266,7 +266,7 @@ void VSThreadPool::runTasks(std::atomic<bool> &stop) {
     }
 }
 
-VSThreadPool::VSThreadPool(VSCore *core) : core(core), activeThreads(0), idleThreads(0), reqCounter(0), stopThreads(false), ticks(0) {
+VSThreadPool::VSThreadPool(VSCore *core) : core(core), activeThreads(0), idleThreads(0), reqCounter(0), stopThreads(false), ticks(0), nextAdjTicks(50) {
     setThreadCount(0);
 }
 
@@ -357,7 +357,11 @@ void VSThreadPool::startInternalRequest(const PVSFrameContext &notify, NodeOutpu
     if (core->memory->isOverLimit()) {
         ticks = 0;
         core->notifyCaches(true);
-    } else if (++ticks == 50) { // a normal tick for caches to adjust their sizes based on recent history
+    } else if (++ticks == nextAdjTicks) { // a normal tick for caches to adjust their sizes based on recent history
+        // gradually slow down the adjustment to avoid negatively affecting the performance.
+        int next = ticks * 9 / 8;
+        if (next > 1000) next = 1000;
+        nextAdjTicks = next;
         ticks = 0;
         core->notifyCaches(false);
     }

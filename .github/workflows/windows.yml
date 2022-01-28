@@ -92,12 +92,17 @@ jobs:
         (Get-Content -Path "msvc_project\VSScript\VSScript.vcxproj" -Raw) -replace "C:\\Program Files\\Python39\\libs",$py_binary_path | Set-Content "msvc_project\VSScript\VSScript.vcxproj"
         (Get-Content -Path "msvc_project\VSScript\VSScript.vcxproj" -Raw) -replace "C:\\Program Files\\Python39\\include",$py_include_path | Set-Content "msvc_project\VSScript\VSScript.vcxproj"
 
-    - name: Compile
+    - name: Compile VS
       run: |
         msbuild msvc_project/VapourSynth.sln /t:Build /p:Configuration=Release /p:Platform=${{ matrix.platform }}        
+    - name: Build Python 3.9 plugin
+      run: |
         pip install . --no-deps -v
+    - name: Build Python 3.8 plugin
+      run: |
         & "$env:PIP38" install . --no-deps -v
-        
+    - name: Build installer
+      run: |
         pushd installer
         $env:SKIP_COMPRESS="no"
         $env:SKIP_WAIT="yes"

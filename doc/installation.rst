@@ -50,8 +50,7 @@ First download and decompress the prerequisites:
    * `Python 3.9.x <http://www.python.org/>`_ or Python 3.8.x -- 32 or 64 bit embeddable version
    
 Simply decompress the `portable VapourSynth archive <https://github.com/vapoursynth/vapoursynth/releases>`_
-into the Python dir and overwrite all existing files.Run ``vs-detect-python.bat``
-to configure it for the current Python version. Done.
+into the Python dir and overwrite all existing files. Done.
 
 You can also use the VapourSynth Editor by decompressing it into the same directory.
 

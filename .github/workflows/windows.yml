@@ -58,19 +58,9 @@ jobs:
     - name: Install Python 3.8 cython and Save Path
       shell: bash
       run: |
-        python -m pip install --upgrade pip
-        pip install cython
-        echo "PYTHON38=$(cygpath -w $(which python))" >> $GITHUB_ENV
-        echo "PIP38=$(cygpath -w $(which pip))" >> $GITHUB_ENV
-
-    - name: Patch Python 3.8 Include Paths
-      run: |
-        $py_include_path = ((Split-Path -Path (Get-Command python.exe).Path) + "\include" )
-        $py_binary_path = ((Split-Path -Path (Get-Command python.exe).Path) + "\libs" )
-        (Get-Content -Path "msvc_project/VSScriptPython38/VSScriptPython38.vcxproj" -Raw) -replace "C:\\Program Files %28x86%29\\Python38-32\\libs",$py_binary_path | Set-Content "msvc_project/VSScriptPython38/VSScriptPython38.vcxproj"
-        (Get-Content -Path "msvc_project/VSScriptPython38/VSScriptPython38.vcxproj" -Raw) -replace "C:\\Program Files %28x86%29\\Python38-32\\include",$py_include_path | Set-Content "msvc_project/VSScriptPython38/VSScriptPython38.vcxproj"
-        (Get-Content -Path "msvc_project/VSScriptPython38/VSScriptPython38.vcxproj" -Raw) -replace "C:\\Program Files\\Python38\\libs",$py_binary_path | Set-Content "msvc_project/VSScriptPython38/VSScriptPython38.vcxproj"
-        (Get-Content -Path "msvc_project/VSScriptPython38/VSScriptPython38.vcxproj" -Raw) -replace "C:\\Program Files\\Python38\\include",$py_include_path | Set-Content "msvc_project/VSScriptPython38/VSScriptPython38.vcxproj"
+        py -3.8-${{ matrix.bits }} -m pip install --upgrade pip
+        py -3.8-${{ matrix.bits }} -m pip install cython
+        echo "PYTHON38_DIR=$pythonLocation" >> $GITHUB_ENV
 
     - name: Setup Python 3.9
       uses: actions/setup-python@v2
@@ -78,10 +68,12 @@ jobs:
         python-version: 3.9
         architecture: ${{ matrix.arch }}
 
-    - name: Install cython
+    - name: Install Python 3.9 cython and Save Path
+      shell: bash
       run: |
-        python -m pip install --upgrade pip
-        pip install cython
+        py -3.9-${{ matrix.bits }} -m pip install --upgrade pip
+        py -3.9-${{ matrix.bits }} -m pip install cython
+        echo "PYTHON39_DIR=$pythonLocation" >> $GITHUB_ENV
 
     - name: Patch Python 3.9 Include Paths
       run: |
@@ -92,15 +84,31 @@ jobs:
         (Get-Content -Path "msvc_project\VSScript\VSScript.vcxproj" -Raw) -replace "C:\\Program Files\\Python39\\libs",$py_binary_path | Set-Content "msvc_project\VSScript\VSScript.vcxproj"
         (Get-Content -Path "msvc_project\VSScript\VSScript.vcxproj" -Raw) -replace "C:\\Program Files\\Python39\\include",$py_include_path | Set-Content "msvc_project\VSScript\VSScript.vcxproj"
 
+    - name: Setup Python 3.10
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+        architecture: ${{ matrix.arch }}
+
+    - name: Install Python 3.10 cython and Save Path
+      shell: bash
+      run: |
+        py -3.10-${{ matrix.bits }} -m pip install --upgrade pip
+        py -3.10-${{ matrix.bits }} -m pip install cython
+        echo "PYTHON310_DIR=$pythonLocation" >> $GITHUB_ENV
+
     - name: Compile VS
       run: |
         msbuild msvc_project/VapourSynth.sln /t:Build /p:Configuration=Release /p:Platform=${{ matrix.platform }}        
+    - name: Build Python 3.10 plugin
+      run: |
+        py -3.10-${{ matrix.bits }} -m pip install . --no-deps -v
     - name: Build Python 3.9 plugin
       run: |
-        pip install . --no-deps -v
+        py -3.9-${{ matrix.bits }} -m pip install . --no-deps -v
     - name: Build Python 3.8 plugin
       run: |
-        & "$env:PIP38" install . --no-deps -v
+        py -3.8-${{ matrix.bits }} -m pip install . --no-deps -v
     - name: Build installer
       run: |
         pushd installer
@@ -113,8 +121,9 @@ jobs:
         } else {
           pushd buildp32
         }
-        pip install . --no-deps -v
-        & "$env:PIP38" install . --no-deps -v
+        py -3.10-${{ matrix.bits }} -m pip install . --no-deps -v
+        py -3.9-${{ matrix.bits }} -m pip install . --no-deps -v
+        py -3.8-${{ matrix.bits }} -m pip install . --no-deps -v
         popd
         popd
 
@@ -123,8 +132,9 @@ jobs:
       run: |
         bits=${{ matrix.bits }}
         arch=${{ matrix.arch }}
-        cp "$(dirname $(which python))"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
-        cp "$(dirname $PYTHON38)"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
+        cp "$PYTHON310_DIR"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
+        cp "$PYTHON39_DIR"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
+        cp "$PYTHON38_DIR"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
         7z a -t7z -mx=3 ../build.7z .
         mv ../*.7z .
         mv installer/buildp$bits upload

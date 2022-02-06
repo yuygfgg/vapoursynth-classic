@@ -40,23 +40,17 @@ static bool initialized = false;
 static PyThreadState *ts = nullptr;
 static PyGILState_STATE s;
 
-static void real_init(void) VS_NOEXCEPT {
-#ifdef VS_TARGET_OS_WINDOWS
+#ifdef _MSC_VER
+static std::wstring getPyPath(void) VS_NOEXCEPT {
 #ifdef _WIN64
     #define VS_INSTALL_REGKEY L"Software\\VapourSynth"
 #else
     #define VS_INSTALL_REGKEY L"Software\\VapourSynth-32"
 #endif
 
-#ifdef VSSCRIPT_PYTHON38
-    const std::wstring pythonDllName = L"python38.dll";
-#else
-    const std::wstring pythonDllName = L"python39.dll";
-#endif
-
     // portable
     HMODULE module;
-    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)&real_init, &module);
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCWSTR)&getPyPath, &module);
     std::vector<wchar_t> pathBuf(65536);
     GetModuleFileNameW(module, pathBuf.data(), (DWORD)pathBuf.size());
     std::wstring dllPath = pathBuf.data();
@@ -69,17 +63,8 @@ static void real_init(void) VS_NOEXCEPT {
 
     HMODULE pythonDll = nullptr;
 
-/*
-#ifdef VS_TARGET_OS_WINDOWS
-    _wputenv(L"PYTHONMALLOC=malloc");
-#else
-    setenv("PYTHONMALLOC", "malloc", 1);
-#endif
-*/
-
     if (isPortable) {
-        std::wstring pyPath = dllPath + L"\\" + pythonDllName;
-        pythonDll = LoadLibraryExW(pyPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        return dllPath;
     } else {
         DWORD dwType = REG_SZ;
         HKEY hKey = 0;
@@ -88,22 +73,21 @@ static void real_init(void) VS_NOEXCEPT {
         DWORD valueLength = 1000;
         if (RegOpenKeyW(HKEY_CURRENT_USER, VS_INSTALL_REGKEY, &hKey) != ERROR_SUCCESS) {
             if (RegOpenKeyW(HKEY_LOCAL_MACHINE, VS_INSTALL_REGKEY, &hKey) != ERROR_SUCCESS)
-                return;
+                return L"";
         }
 
         LSTATUS status = RegQueryValueExW(hKey, L"PythonPath", nullptr, &dwType, (LPBYTE)&value, &valueLength);
         RegCloseKey(hKey);
         if (status != ERROR_SUCCESS)
-            return;
+            return L"";
 
-        std::wstring pyPath = value;
-        pyPath += L"\\" + pythonDllName;
-
-        pythonDll = LoadLibraryExW(pyPath.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        return value;
     }
-    if (!pythonDll)
-        return;
-#endif
+    return L"";
+}
+#endif // _MSC_VER
+
+static void real_init(void) VS_NOEXCEPT {
     int preInitialized = Py_IsInitialized();
     if (!preInitialized)
         Py_InitializeEx(0);
@@ -353,3 +337,69 @@ const VSSCRIPTAPI *VS_CC getVSScriptAPI(int version) VS_NOEXCEPT {
     }
     return nullptr;
 }
+
+#ifdef _MSC_VER
+#include <windows.h>
+#include <delayimp.h>
+#include <iostream>
+
+namespace {
+bool verbose() { return getenv("VSC_PY_VERBOSE") != nullptr; }
+
+extern "C" FARPROC WINAPI delayload_hook(unsigned reason, DelayLoadInfo* info) {
+    switch (reason) {
+    case dliNoteStartProcessing:
+    case dliNoteEndProcessing:
+        // Nothing to do here.
+        break;
+    case dliNotePreLoadLibrary: {
+        //std::cerr << "loading " << info->szDll << std::endl;
+        const std::vector<std::wstring> pythonDllNames {
+            L"python310.dll",
+            L"python39.dll",
+            L"python38.dll",
+        };
+        const std::wstring pyPath = getPyPath();
+        HMODULE pythonDll = nullptr;
+        for (const auto &dllName: pythonDllNames) {
+            std::wstring path = pyPath + L"\\" + dllName;
+            if (verbose())
+                std::wcerr << L"[VS-C] trying to load " << path;
+            pythonDll = LoadLibraryExW(path.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+            if (verbose())
+                std::wcerr << L": " << (pythonDll ? L"OK" : L"Failed") << std::endl;
+            if (pythonDll)
+                break;
+        }
+        if (!pythonDll) {
+            std::wcerr << L"vsscript: unable to load python dll from " << pyPath << L"." << std::endl;
+            abort();
+        }
+        return (FARPROC)pythonDll;
+    }
+    case dliNotePreGetProcAddress:
+        // Nothing to do here.
+        break;
+    case dliFailLoadLib:
+    case dliFailGetProc:
+        // Returning NULL from error notifications will cause the delay load
+        // runtime to raise a VcppException structured exception, that some code
+        // might want to handle.
+        return NULL;
+        break;
+    default:
+        abort(); // unreachable.
+        break;
+    }
+    // Returning NULL causes the delay load machinery to perform default
+    // processing for this notification.
+    return NULL;
+}
+} // namespace
+
+extern "C" {
+    const PfnDliHook __pfnDliNotifyHook2 = delayload_hook;
+    const PfnDliHook __pfnDliFailureHook2 = delayload_hook;
+};
+
+#endif

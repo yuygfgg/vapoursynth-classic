@@ -110,7 +110,6 @@ setup(
     long_description = "A portable replacement for Avisynth" if is_portable else "A modern replacement for Avisynth",
     platforms = "All",
     ext_modules = [Extension("vapoursynth", [join("src", "cython", "vapoursynth.pyx")],
-                             define_macros=[("CYTHON_LIMITED_API", "1"), ("Py_LIMITED_API", "1")],
                              libraries = ["vapoursynth"],
                              library_dirs = library_dirs,
                              include_dirs = [
@@ -120,7 +119,7 @@ setup(
                             ])],
     setup_requires=[
         'setuptools>=18.0',
-        "Cython>=3.0.0a10",
+        "Cython",
     ],
     
     **extra_data

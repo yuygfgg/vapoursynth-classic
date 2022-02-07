@@ -59,7 +59,7 @@ jobs:
       shell: bash
       run: |
         py -3.8-${{ matrix.bits }} -m pip install --upgrade pip
-        py -3.8-${{ matrix.bits }} -m pip install "cython>=3.0.0a10"
+        py -3.8-${{ matrix.bits }} -m pip install cython
         echo "PYTHON38_DIR=$pythonLocation" >> $GITHUB_ENV
 
     - name: Setup Python 3.9
@@ -72,7 +72,7 @@ jobs:
       shell: bash
       run: |
         py -3.9-${{ matrix.bits }} -m pip install --upgrade pip
-        py -3.9-${{ matrix.bits }} -m pip install "cython>=3.0.0a10"
+        py -3.9-${{ matrix.bits }} -m pip install cython
         echo "PYTHON39_DIR=$pythonLocation" >> $GITHUB_ENV
 
     - name: Patch Python 3.9 Include Paths
@@ -94,7 +94,7 @@ jobs:
       shell: bash
       run: |
         py -3.10-${{ matrix.bits }} -m pip install --upgrade pip
-        py -3.10-${{ matrix.bits }} -m pip install "cython>=3.0.0a10"
+        py -3.10-${{ matrix.bits }} -m pip install cython
         echo "PYTHON310_DIR=$pythonLocation" >> $GITHUB_ENV
 
     - name: Compile VS

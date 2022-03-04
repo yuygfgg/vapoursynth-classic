@@ -57,7 +57,9 @@ static BOOL WINAPI HandlerRoutine(DWORD dwCtrlType) {
     case CTRL_C_EVENT:
     case CTRL_BREAK_EVENT:
     case CTRL_CLOSE_EVENT:
-        _exit(1);
+        // Even _exit(1) might deadlock in certain extreme cases.
+        while (1)
+            TerminateProcess(GetCurrentProcess(), 1);
     default:
         return FALSE;
     }

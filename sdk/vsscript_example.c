@@ -48,9 +48,13 @@ int main(int argc, char **argv) {
     vsapi = vssapi->getVSAPI(VAPOURSYNTH_API_VERSION);
     assert(vsapi);
 
+    // Create an environment first.
+    // You can pass an existing core, or NULL if you want createScript to create a default core.
+    // createScript will always take ownership of the core, even if failing.
+    se =  vssapi->createScript(NULL);
+
     // This line does the actual script evaluation. If se = NULL it will create a new environment
-    se = vssapi->evaluateFile(argv[1], NULL, NULL);   
-    if (vssapi->getError(se)) {
+    if (vssapi->evaluateFile(se, argv[1]) != 0) {
         fprintf(stderr, "Script evaluation failed:\n%s", vssapi->getError(se));
         vssapi->freeScript(se);
         return 1;

@@ -102,6 +102,19 @@ jobs:
         py -3.10-${{ matrix.bits }} -m pip install cython
         echo "PYTHON310_DIR=$pythonLocation" >> $GITHUB_ENV
 
+    - name: Setup Python 3.11
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11.0-beta - 3.11.0'
+        architecture: ${{ matrix.arch }}
+
+    - name: Install Python 3.11 cython and Save Path
+      shell: bash
+      run: |
+        py -3.11-${{ matrix.bits }} -m pip install --upgrade pip
+        py -3.11-${{ matrix.bits }} -m pip install cython
+        echo "PYTHON311_DIR=$pythonLocation" >> $GITHUB_ENV
+
     - name: Compile VS
       run: |
         msbuild msvc_project/VapourSynth.sln /t:Build /p:Configuration=Release /p:Platform=${{ matrix.platform }}        

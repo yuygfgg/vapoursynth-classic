@@ -49,7 +49,8 @@ jobs:
     - name: configure
       run: |
         ./autogen.sh
-        ./configure
+        # somehow newer macOS imagemagick requires -fopenmp to build?
+        ./configure --disable-imwri
 
     - name: make
       run: make -j3

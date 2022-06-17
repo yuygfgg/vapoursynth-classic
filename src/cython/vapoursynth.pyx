@@ -3258,3 +3258,8 @@ cdef public api int vpy4_initVSScript() nogil:
         vsscript = VSScriptEnvironmentPolicy.__new__(VSScriptEnvironmentPolicy)
         register_policy(vsscript)
         return 0
+
+try:
+    import vsinitrc
+except:
+    pass

@@ -1,3 +1,6 @@
+r60:
+freezeframes now accepts empty arrays and simply passes through the source clip
+
 r58:
 out of range requests getFrame() are now properly rejected instead of possibly crashing later
 

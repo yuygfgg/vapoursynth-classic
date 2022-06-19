@@ -1,6 +1,7 @@
 r60:
 blankaudio now takes an array of channel constants since this better matches how most other functions work
 fixed splitchannels crash on certain channel configurations (YomikoR)
+better error messages when filters get unsupported input formats or combinations thereof
 freezeframes now accepts empty arrays and simply passes through the source clip
 
 r58:

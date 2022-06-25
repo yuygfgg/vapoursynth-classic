@@ -1,4 +1,5 @@
 r60:
+fixed splitchannels crash on certain channel configurations (YomikoR)
 freezeframes now accepts empty arrays and simply passes through the source clip
 
 r58:

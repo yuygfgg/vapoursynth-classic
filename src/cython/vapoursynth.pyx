@@ -2554,7 +2554,7 @@ cdef class Plugin(object):
             trett = returnType.encode('utf-8')
             crett = trett
 
-        cdef bint ro = _vscapi.pluginSetRO(self.plugin, 0)
+        cdef bint readonly_ = _vscapi.pluginSetRO(self.plugin, 0)
         cdef const char *cnewname = NULL
         if override:
             tnewname = newname.encode('utf-8')
@@ -2570,7 +2570,7 @@ cdef class Plugin(object):
             if cnewname != NULL:
                 assert _vscapi.pluginRenameFunc(self.plugin, cnewname, cname), 'failed to restore old filter name'
             Py_DECREF(fdata)
-        if ro:
+        if readonly_:
             _vscapi.pluginSetRO(self.plugin, 1)
         return ret
 

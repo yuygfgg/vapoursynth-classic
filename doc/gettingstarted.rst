@@ -12,14 +12,14 @@ most video scripts are created.
 Example Script
 ##############
 
-Here's a sample script to be inspired by, it assumes that ffms2 is installed and :doc:`auto-loaded <installation>`::
+Here's a sample script to be inspired by, it assumes that lsmas is installed and :doc:`auto-loaded <installation>`::
 
    from vapoursynth import core
-   video = core.ffms2.Source(source='Rule6.mkv')
+   video = core.lsmas.LWLibavSource(source='Rule6.mkv')
    video = core.std.Transpose(video)
    video.set_output()
    
-What it does is to get an instance of the core and load a video file using FFMS2. The video is then transposed
+What it does is to get an instance of the core and load a video file using L-SMASH. The video is then transposed
 (think matrix transpose, or if you don't know that, a 90 degree rotation plus horizontal flip).
 
 Remember that most VapourSynth objects have a quite nice string representation

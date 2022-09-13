@@ -193,7 +193,7 @@ Example with a custom palette and automatic blending::
    
    unused = 1 << 42
 
-   src = core.ffms2.Source("video.mp4")
+   src = core.lsmas.LWLibavSource("video.mp4")
 
    # Override only the third element of the palette. Set it to some kind of green.
    ret = core.sub.ImageFile(src, "subtitles.sup", palette=[unused, unused, rgba(0, 192, 128)])

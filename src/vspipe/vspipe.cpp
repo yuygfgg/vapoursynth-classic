@@ -45,6 +45,7 @@ extern "C" {
 #define __STDC_FORMAT_MACROS
 #include <cstdio>
 #include <cinttypes>
+#include <stdlib.h>
 
 // fixme, add a more verbose graph mode with filter times included
 // fixme, using a "." for no output is weird
@@ -877,8 +878,10 @@ int wmain(int argc, wchar_t **argv) {
     if (_setmode(_fileno(stdout), _O_BINARY) == -1)
         fprintf(stderr, "Failed to set stdout to binary mode\n");
     SetConsoleCtrlHandler(HandlerRoutine, TRUE);
+    if (!getenv("PYTHONDONTWRITEBYTECODE")) _putenv("PYTHONDONTWRITEBYTECODE=1");
 #else
 int main(int argc, char **argv) {
+    setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
 #endif
 
     const VSSCRIPTAPI *vssapi = getVSScriptAPI(VSSCRIPT_API_VERSION);

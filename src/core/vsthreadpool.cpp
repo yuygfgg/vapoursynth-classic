@@ -189,7 +189,7 @@ void VSThreadPool::runTasks(std::atomic<bool> &stop) {
 /////////////////////////////////////////////////////////////////////////////////////////////
 // Handle frames that were requested
             bool requestedFrames = frameContext->reqList.size() > 0 && !frameProcessingDone;
-            bool needsSort = false;
+            bool needsSort = !false; // see issue 7.
             if (f && requestedFrames)
                 core->logFatal("A frame was returned at the end of processing by " + node->name + " but there are still outstanding requests");
 

@@ -3097,8 +3097,25 @@ cdef public api int vpy4_evaluateFile(VSScript *se, const char *scriptFilename) 
             se.errstr = <void *>errstr
             return 1
 
+cdef list _atexit_handlers = []
+def _atexit(handler):
+    _atexit_handlers.append(handler)
+
 cdef public api void vpy4_freeScript(VSScript *se) nogil:
     with gil:
+        try:
+            # Environment is lazily created at the time of exec'ing a script,
+            # if the process errors out before that (e.g. fails compiling),
+            # the environment might be None.
+            env = _get_vsscript_policy().get_environment(se.id)
+            if env:
+                with use_environment(env).use():
+                    global _atexit_handlers
+                    for h in _atexit_handlers:
+                        h()
+                    _atexit_handlers.clear()
+        except:
+            pass
         vpy_clearEnvironment(se)
         if se.pyenvdict:
             pyenvdict = <dict>se.pyenvdict

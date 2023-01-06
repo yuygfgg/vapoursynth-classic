@@ -168,9 +168,18 @@ jobs:
         if-no-files-found: error
         path: build.7z
 
-    - name: Run test
+    - name: Run test for Python 3.11
       if: ${{ matrix.test }}
-      run: python -m unittest discover -s test -p "*test.py"
+      run: py -3.11-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
+    - name: Run test for Python 3.10
+      if: ${{ matrix.test }}
+      run: py -3.10-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
+    - name: Run test for Python 3.9
+      if: ${{ matrix.test }}
+      run: py -3.9-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
+    - name: Run test for Python 3.8
+      if: ${{ matrix.test }}
+      run: py -3.8-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
 
     - name: Install sphinx
       run: |

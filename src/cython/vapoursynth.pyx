@@ -1639,6 +1639,9 @@ cdef class RawNode(object):
     def __init__(self):
         raise Error('Class cannot be instantiated directly')
 
+    def id(self):
+        return <int64_t>self.node
+
     cdef ensure_valid_frame_number(self, int n):
         raise NotImplementedError("Needs to be implemented by subclass.")
 

@@ -3033,7 +3033,9 @@ cdef public api int vpy_evaluateFile(VSScript *se, const char *scriptFilename, i
             _get_vsscript_policy().get_environment(se.id).outputs.clear()
         try:
             with open(scriptFilename.decode('utf-8'), 'rb') as f:
-                script = f.read(1024*1024*16)
+                script = f.read(1<<30)
+                if f.read(1) != b'':
+                    raise RuntimeError("vpy file too large")
             return vpy_evaluateScript(se, script, scriptFilename, flags)
         except BaseException, e:
             errstr = 'File reading exception:\n' + str(e)
@@ -3082,7 +3084,9 @@ cdef public api int vpy4_evaluateFile(VSScript *se, const char *scriptFilename) 
                 raise RuntimeError("NULL scriptFilename passed.")
                 
             with open(scriptFilename.decode('utf-8'), 'rb') as f:
-                script = f.read(1024*1024*16)
+                script = f.read(1<<30)
+                if f.read(1) != b'':
+                    raise RuntimeError("vpy file too large")
             return vpy4_evaluateBuffer(se, script, scriptFilename)
         except BaseException, e:
             errstr = 'File reading exception:\n' + str(e)

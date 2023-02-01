@@ -7,9 +7,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - uses: codespell-project/actions-codespell@master
       with:
         exclude_file: .codespellignore
-        skip: ./src/avfs/include,./src/avisynth/avisynth.h,./src/avisynth/interface.cpp,./src/core/ter-116n.h,./src/core/expr/jitasm.h,./src/filters/vivtc/vivtc.c,./src/filters/subtext/text.c
+        skip: ./src/avfs/include,./src/avisynth/avisynth.h,./src/avisynth/interface.cpp,./src/core/ter-116n.h,./src/core/expr/jitasm.h,./src/filters/vivtc/vivtc.c,./src/filters/subtext/text.c,./src/common/nvtx3/*,./src/common/nvtx3/*/*

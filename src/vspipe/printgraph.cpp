@@ -166,7 +166,13 @@ static void printNodeTimesHelper(std::list<NodeTimeRecord> &lines, std::set<VSNo
     if (!visited.insert(node).second)
         return;
 
-    lines.push_back(NodeTimeRecord{ vsapi->getNodeCreationFunctionName(node, 0), vsapi->getNodeFilterMode(node), vsapi->getNodeFilterTime(node) } );
+    std::string plgName = vsapi->getNodeCreationFunctionName(node, 0);
+    std::string nodeName = vsapi->getNodeName(node);
+    if (nodeName.find(plgName) == 0)
+        plgName = nodeName;
+    if (plgName.find(nodeName) == plgName.npos)
+        plgName += "@" + nodeName;
+    lines.push_back(NodeTimeRecord{ plgName, vsapi->getNodeFilterMode(node), vsapi->getNodeFilterTime(node) } );
 
     int numDeps = vsapi->getNumNodeDependencies(node);
     const VSFilterDependency *deps = vsapi->getNodeDependencies(node);

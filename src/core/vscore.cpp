@@ -1241,9 +1241,20 @@ PVSFrame VSNode::getCachedFrameInternal(int n) {
 struct vs_domain { static constexpr char const* name{"vapoursynth"}; };
 
 PVSFrame VSNode::getFrameInternal(int n, int activationReason, VSFrameContext *frameCtx) {
-    const auto color = activationReason == arInitial ? nvtx3::rgb(120,120,120) :
-                           activationReason == arAllFramesReady ? nvtx3::rgb(255,255,0) :
-                           activationReason == arError ? nvtx3::rgb(255,0,0) : nvtx3::rgb(0,0,0);
+    constexpr auto colorInitial = nvtx3::rgb(120, 120, 120),
+                   colorFrameReady = nvtx3::rgb(64, 64, 0),
+                   colorAllFrameReady = nvtx3::rgb(128, 128, 0),
+                   colorError = nvtx3::rgb(255, 0, 0),
+                   colorUnknown = nvtx3::rgb(0, 0, 0);;
+    const auto color =
+        apiMajor == VAPOURSYNTH_API_MAJOR ?
+           (activationReason == arInitial ? colorInitial :
+            activationReason == arAllFramesReady ? colorAllFrameReady :
+            activationReason == arError ? colorError : colorUnknown) :
+           (activationReason == vs3::arInitial ? colorInitial :
+            activationReason == vs3::arFrameReady ? colorFrameReady :
+            activationReason == vs3::arAllFramesReady ? colorAllFrameReady :
+            activationReason == vs3::arError ? colorError : colorUnknown);
     nvtx3::scoped_range_in<vs_domain> range {nvtx3::event_attributes { name, nvtx3::payload(n), color}};
 
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;

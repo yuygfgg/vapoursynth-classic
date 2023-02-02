@@ -386,7 +386,11 @@ cdef extern from "include/VapourSynth4.h" nogil:
         void logMessage(int msgType, const char *msg, VSCore *core) nogil
         VSLogHandle *addLogHandler(VSLogHandler handler, VSLogHandlerFree free, void *userData, VSCore *core) nogil
         bint removeLogHandler(VSLogHandle *handle, VSCore *core) nogil
-                
+
+        # Graph information API, not part of the stable API
+        const char *getNodeName(VSNode *node) nogil
+
+
     const VSAPI *getVapourSynthAPI(int version) nogil
 
 cdef extern from "include/VapourSynthC.h" nogil:
@@ -397,3 +401,4 @@ cdef extern from "include/VapourSynthC.h" nogil:
         int pluginSetRO(VSPlugin *, int) nogil
         int pluginRenameFunc(VSPlugin *, const char *, const char *) nogil
         VSPlugin *createPlugin(const char *id, const char *ns, int version, VSCore *core) nogil
+        void setNodeName(VSNode *node, const char *name) nogil

@@ -1641,6 +1641,14 @@ cdef class RawNode(object):
 
     def _id(self):
         return <int64_t>self.node
+    def _getName(self):
+        bname = <bytes>getVSAPIInternal().getNodeName(self.node)
+        return bname.decode('utf-8')
+    def _setName(self, name):
+        getVSAPIInternal()
+        tname = name.encode('utf-8')
+        cdef const char *cname = tname
+        _vscapi.setNodeName(self.node, cname)
 
     cdef ensure_valid_frame_number(self, int n):
         raise NotImplementedError("Needs to be implemented by subclass.")

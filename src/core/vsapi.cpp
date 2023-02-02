@@ -1339,11 +1339,15 @@ static VSPlugin *VS_CC createPlugin(const char *id, const char *ns, int version,
     core->addPlugin(ns, p);
     return p;
 }
+static void VS_CC setNodeName(VSNode *node, const char *name) {
+    node->setName(name);
+}
 static const VSCAPI vsc_internal_api = {
     &getPluginAPIVersion,
     &pluginSetRO,
     &pluginRenameFunc,
     &createPlugin,
+    &setNodeName,
 };
 ///////////////////////////////
 

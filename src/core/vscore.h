@@ -931,6 +931,7 @@ public:
     const std::string &getName() const {
         return name;
     }
+    void setName(const std::string &n) { name = n; }
 
     const char *getCreationFunctionName(int level) const;
     const VSMap *getCreationFunctionArguments(int level) const;

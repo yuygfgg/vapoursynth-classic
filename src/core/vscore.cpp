@@ -1238,24 +1238,42 @@ PVSFrame VSNode::getCachedFrameInternal(int n) {
         return nullptr;
 }
 
-struct vs_domain { static constexpr char const* name{"vapoursynth"}; };
-
 PVSFrame VSNode::getFrameInternal(int n, int activationReason, VSFrameContext *frameCtx) {
-    constexpr auto colorInitial = nvtx3::rgb(120, 120, 120),
-                   colorFrameReady = nvtx3::rgb(64, 64, 0),
+#ifndef NVTX_DISABLE
+    static const auto domain_initial = nvtxDomainCreateA("vs-initial"),
+                      domain_ready   = nvtxDomainCreateA("vs-ready"),
+                      domain_error   = nvtxDomainCreateA("vs-error"),
+                      domain_unknown = nvtxDomainCreateA("vs-unknown");
+    const int arv3 =
+        apiMajor != VAPOURSYNTH_API_MAJOR ? activationReason :
+           (activationReason == arInitial ? vs3::arInitial :
+            activationReason == arAllFramesReady ? vs3::arAllFramesReady :
+            activationReason == arError ? vs3::arError : 1000000);
+    constexpr auto colorInitial       = nvtx3::rgb(120, 120, 120),
+                   colorFrameReady    = nvtx3::rgb(64, 64, 0),
                    colorAllFrameReady = nvtx3::rgb(128, 128, 0),
-                   colorError = nvtx3::rgb(255, 0, 0),
-                   colorUnknown = nvtx3::rgb(0, 0, 0);;
+                   colorError         = nvtx3::rgb(255, 0, 0),
+                   colorUnknown       = nvtx3::rgb(0, 0, 0);;
     const auto color =
-        apiMajor == VAPOURSYNTH_API_MAJOR ?
-           (activationReason == arInitial ? colorInitial :
-            activationReason == arAllFramesReady ? colorAllFrameReady :
-            activationReason == arError ? colorError : colorUnknown) :
-           (activationReason == vs3::arInitial ? colorInitial :
-            activationReason == vs3::arFrameReady ? colorFrameReady :
-            activationReason == vs3::arAllFramesReady ? colorAllFrameReady :
-            activationReason == vs3::arError ? colorError : colorUnknown);
-    nvtx3::scoped_range_in<vs_domain> range {nvtx3::event_attributes { name, nvtx3::payload(n), color}};
+        (arv3 == vs3::arInitial ? colorInitial :
+         arv3 == vs3::arFrameReady ? colorFrameReady :
+         arv3 == vs3::arAllFramesReady ? colorAllFrameReady :
+         arv3 == vs3::arError ? colorError : colorUnknown);
+    const auto domain =
+        arv3 == vs3::arInitial ? domain_initial :
+        (arv3 == vs3::arFrameReady || activationReason == vs3::arAllFramesReady) ? domain_ready :
+        arv3 == vs3::arError ? domain_error : domain_unknown;
+    class scoped_range {
+        const nvtxDomainHandle_t domain_;
+    public:
+        scoped_range(const nvtxDomainHandle_t domain, const nvtx3::event_attributes &attr) : domain_(domain) {
+            nvtxDomainRangePushEx(domain_, attr.get());
+        }
+        ~scoped_range() {
+            nvtxDomainRangePop(domain_);
+        }
+    } range {domain, nvtx3::event_attributes { name, nvtx3::payload(n), color}};
+#endif
 
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
     bool enableGraphInspection = core->enableGraphInspection;

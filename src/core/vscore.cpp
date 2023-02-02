@@ -1256,7 +1256,7 @@ PVSFrame VSNode::getFrameInternal(int n, int activationReason, VSFrameContext *f
          arv3 == vs3::arError ? colorError : colorUnknown);
     const auto domain =
         arv3 == vs3::arInitial ? domain_initial :
-        (arv3 == vs3::arFrameReady || activationReason == vs3::arAllFramesReady) ? domain_ready :
+        (arv3 == vs3::arFrameReady || arv3 == vs3::arAllFramesReady) ? domain_ready :
         arv3 == vs3::arError ? domain_error : domain_unknown;
     class scoped_range {
         const nvtxDomainHandle_t domain_;

@@ -31,7 +31,6 @@ install-sh
 libtool
 ltmain.sh
 missing
-vspipe
 *.pc
 
 dist/

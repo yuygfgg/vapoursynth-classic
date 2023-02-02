@@ -42,7 +42,21 @@
 #include "../common/vsutf16.h"
 #endif
 
+// Event profiling
 #include "../common/nvtx3/nvtx3.hpp"
+// filter creation event domain
+struct vs_create_domain { static constexpr char const* name{"vs-create"}; };
+// cache management domain
+struct vs_cache_domain { static constexpr char const* name{"vs-cache"}; };
+static nvtx3::named_category vs_cache_hit_cat{1, "cache hit"}; // payload frame id
+static nvtx3::named_category vs_cache_miss_cat{2, "cache miss"}; // payload frame id
+static nvtx3::named_category vs_cache_grow_cat{3, "cache size grow"}; // payload cache size
+static nvtx3::named_category vs_cache_shrink_cat{4, "cache size shrink"}; // payload cache size
+// domains for main filter events (use different domain to ease visual timeline analysis)
+static const auto vs_domain_initial = nvtxDomainCreateA("vs-initial"),
+                  vs_domain_ready   = nvtxDomainCreateA("vs-ready"),
+                  vs_domain_error   = nvtxDomainCreateA("vs-error"),
+                  vs_domain_unknown = nvtxDomainCreateA("vs-unknown");
 
 // Internal filter headers
 #include "internalfilters.h"
@@ -763,8 +777,6 @@ VSPluginFunction::VSPluginFunction(const std::string &name, const std::string &a
         parseArgString(returnType, retArgs, plugin->apiMajor);
 }
 
-struct vs_create_domain { static constexpr char const* name{"vs-create"}; };
-
 VSMap *VSPluginFunction::invoke(const VSMap &args) {
     VSMap *v = new VSMap;
 
@@ -1227,18 +1239,18 @@ void VSNode::setCacheOptions(int fixedSize, int maxSize, int maxHistorySize) {
 
 PVSFrame VSNode::getCachedFrameInternal(int n) {
     std::lock_guard<std::mutex> lock(cacheMutex);
-    if (cacheEnabled)
-        return cache.object(n);
-    else
+    if (cacheEnabled) {
+        auto f = cache.object(n);
+        nvtx3::mark_in<vs_cache_domain>(f ? vs_cache_hit_cat : vs_cache_miss_cat,
+                                        name,
+                                        nvtx3::payload(n));
+        return f;
+    } else
         return nullptr;
 }
 
 PVSFrame VSNode::getFrameInternal(int n, int activationReason, VSFrameContext *frameCtx) {
 #ifndef NVTX_DISABLE
-    static const auto domain_initial = nvtxDomainCreateA("vs-initial"),
-                      domain_ready   = nvtxDomainCreateA("vs-ready"),
-                      domain_error   = nvtxDomainCreateA("vs-error"),
-                      domain_unknown = nvtxDomainCreateA("vs-unknown");
     const int arv3 =
         apiMajor != VAPOURSYNTH_API_MAJOR ? activationReason :
            (activationReason == arInitial ? vs3::arInitial :
@@ -1255,9 +1267,9 @@ PVSFrame VSNode::getFrameInternal(int n, int activationReason, VSFrameContext *f
          arv3 == vs3::arAllFramesReady ? colorAllFrameReady :
          arv3 == vs3::arError ? colorError : colorUnknown);
     const auto domain =
-        arv3 == vs3::arInitial ? domain_initial :
-        (arv3 == vs3::arFrameReady || arv3 == vs3::arAllFramesReady) ? domain_ready :
-        arv3 == vs3::arError ? domain_error : domain_unknown;
+        arv3 == vs3::arInitial ? vs_domain_initial :
+        (arv3 == vs3::arFrameReady || arv3 == vs3::arAllFramesReady) ? vs_domain_ready :
+        arv3 == vs3::arError ? vs_domain_error : vs_domain_unknown;
     class scoped_range {
         const nvtxDomainHandle_t domain_;
     public:
@@ -2626,8 +2638,8 @@ VSNode::VSCache::CacheAction VSNode::VSCache::recommendSize() {
     }
 }
 
-inline VSNode::VSCache::VSCache(int maxSize, int maxHistorySize, bool fixedSize)
-    : maxSize(maxSize), maxHistorySize(maxHistorySize), fixedSize(fixedSize) {
+inline VSNode::VSCache::VSCache(VSNode *node, int maxSize, int maxHistorySize, bool fixedSize)
+    : parent(node), maxSize(maxSize), maxHistorySize(maxHistorySize), fixedSize(fixedSize) {
     clear();
 }
 
@@ -2689,6 +2701,17 @@ void VSNode::VSCache::trim(int max, int maxHistory) {
     while (last && historySize > maxHistory) {
         unlink(*last);
     }
+}
+
+void VSNode::VSCache::setMaxFrames(int m) {
+    if (m < maxSize)
+        nvtx3::mark_in<vs_cache_domain>(vs_cache_shrink_cat, parent->name,
+                                        nvtx3::payload(m));
+    else if (m > maxSize)
+        nvtx3::mark_in<vs_cache_domain>(vs_cache_grow_cat, parent->name,
+                                        nvtx3::payload(m));
+    maxSize = m;
+    trim(maxSize, maxHistorySize);
 }
 
 void VSNode::VSCache::adjustSize(bool needMemory) {

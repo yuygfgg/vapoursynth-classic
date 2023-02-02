@@ -677,6 +677,8 @@ private:
         Node *weakpoint;
         Node *last;
 
+        VSNode *parent;
+
         std::unordered_map<int, Node> hash;
 
         int maxSize;
@@ -775,7 +777,7 @@ private:
             Clear
         };
 
-        VSCache(int maxSize = 20, int maxHistorySize = 20, bool fixedSize = false);
+        VSCache(VSNode *node, int maxSize = 20, int maxHistorySize = 20, bool fixedSize = false);
 
         ~VSCache() {
             clear();
@@ -785,10 +787,7 @@ private:
             return maxSize;
         }
 
-        inline void setMaxFrames(int m) {
-            maxSize = m;
-            trim(maxSize, maxHistorySize);
-        }
+        void setMaxFrames(int m);
 
         inline int getMaxHistory() const {
             return maxHistorySize;
@@ -865,7 +864,7 @@ private:
     bool cacheLinear = false;
     bool cacheOverride = false;
     bool cacheEnabled = false; // FIXME, needs to be atomic?
-    VSCache cache;
+    VSCache cache {this};
 
     // api3
     vs3::VSVideoInfo v3vi;

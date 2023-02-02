@@ -1241,7 +1241,10 @@ PVSFrame VSNode::getCachedFrameInternal(int n) {
 struct vs_domain { static constexpr char const* name{"vapoursynth"}; };
 
 PVSFrame VSNode::getFrameInternal(int n, int activationReason, VSFrameContext *frameCtx) {
-    nvtx3::scoped_range_in<vs_domain> range {nvtx3::event_attributes { name, nvtx3::payload(n) }};
+    const auto color = activationReason == arInitial ? nvtx3::rgb(120,120,120) :
+                           activationReason == arAllFramesReady ? nvtx3::rgb(255,255,0) :
+                           activationReason == arError ? nvtx3::rgb(255,0,0) : nvtx3::rgb(0,0,0);
+    nvtx3::scoped_range_in<vs_domain> range {nvtx3::event_attributes { name, nvtx3::payload(n), color}};
 
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
     bool enableGraphInspection = core->enableGraphInspection;

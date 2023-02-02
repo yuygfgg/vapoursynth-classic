@@ -32,10 +32,6 @@
 #include <queue>
 #include <bitset>
 
-#ifdef VS_PROFILE_CREATE
-#include <iostream>
-#endif
-
 #ifdef VS_TARGET_CPU_X86
 #include "x86utils.h"
 #endif
@@ -767,6 +763,8 @@ VSPluginFunction::VSPluginFunction(const std::string &name, const std::string &a
         parseArgString(returnType, retArgs, plugin->apiMajor);
 }
 
+struct vs_create_domain { static constexpr char const* name{"vs-create"}; };
+
 VSMap *VSPluginFunction::invoke(const VSMap &args) {
     VSMap *v = new VSMap;
 
@@ -820,14 +818,11 @@ VSMap *VSPluginFunction::invoke(const VSMap &args) {
             plugin->core->functionFrame = std::make_shared<VSFunctionFrame>(fullName, new VSMap(&args), plugin->core->functionFrame);
         }
 
-#ifdef VS_PROFILE_CREATE
-        std::chrono::time_point<std::chrono::high_resolution_clock> startTime = std::chrono::high_resolution_clock::now();
-#endif
-        func(&args, v, functionData, plugin->core, getVSAPIInternal(plugin->apiMajor));
-#ifdef VS_PROFILE_CREATE
-        std::chrono::nanoseconds duration = std::chrono::high_resolution_clock::now() - startTime;
-        std::cerr << this->plugin->fnamespace << "." << this->name << " uses " << 0.001 * (double)duration.count() << " us" << std::endl;
-#endif
+        {
+            std::string fullName = plugin->getNamespace() + "." + name;
+            nvtx3::scoped_range_in<vs_create_domain> range { nvtx3::event_attributes { fullName, nvtx3::rgb(0, 0, 255) }};
+            func(&args, v, functionData, plugin->core, getVSAPIInternal(plugin->apiMajor));
+        }
 
         if (enableGraphInspection) {
             assert(plugin->core->functionFrame);

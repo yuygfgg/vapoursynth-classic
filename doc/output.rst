@@ -39,6 +39,10 @@ Options
 ``-c, --container <y4m/wav/w64>``
     Add headers for the specified format to the output
 
+``-c, --preserve-cwd``
+    Don't temporarily change the working directory to the script directory (R54 compatibility)
+    (The ``-c`` option is reused due to unfortunate reasons. If it is followed by ``y4m/wav/w64``, then it's treated as ``--container``, otherwise, it's treated as ``--preserve-cwd``.)
+
 ``-t, --timecodes FILE``
     Write timecodes v2 file
 

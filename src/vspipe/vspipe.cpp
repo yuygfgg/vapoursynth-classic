@@ -658,7 +658,7 @@ static void printHelp() {
         "  -o, --outputindex N              Select output index\n"
         "  -r, --requests N                 Set number of concurrent frame requests\n"
         "  -c, --container <y4m/wav/w64>    Add headers for the specified format to the output\n"
-        "  -c, --preserve-cwd               Don't temporarily change the working directory the script path\n"
+        "  -c, --preserve-cwd               Don't temporarily change the working directory to the script directory\n"
         "  -t, --timecodes FILE             Write timecodes v2 file\n"
         "  -p, --progress                   Print progress to stderr\n"
         "      --filter-time                Prints time spent in individual filters after processing\n"

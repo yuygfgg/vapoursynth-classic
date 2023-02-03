@@ -2574,7 +2574,8 @@ cdef class Plugin(object):
             if not _vscapi.pluginRenameFunc(self.plugin, cname, cnewname):
                 raise Error('failed to rename existing filter')
 
-        fdata = createFilterFuncData(func, self.core.core)
+        cdef EnvironmentData env = _env_current()
+        fdata = createFilterFuncData(func, env)
         Py_INCREF(fdata)
 
         cdef bint ret = self.funcs.registerFunction(cname, cargs, crett, publicFilterFunction, <void *>fdata, self.plugin)
@@ -2588,7 +2589,7 @@ cdef class Plugin(object):
 
 cdef class FilterFuncData(object):
     cdef object func
-    cdef VSCore *core
+    cdef EnvironmentData env
 
     def __init__(self):
         raise Error('Class cannot be instantiated directly')
@@ -2596,26 +2597,27 @@ cdef class FilterFuncData(object):
     def __call__(self, **kwargs):
         return self.func(**kwargs)
 
-cdef FuncData createFilterFuncData(object func, VSCore *core):
-    cdef FuncData instance = FuncData.__new__(FuncData)
+cdef FilterFuncData createFilterFuncData(object func, EnvironmentData env):
+    cdef FilterFuncData instance = FilterFuncData.__new__(FilterFuncData)
     instance.func = func
-    instance.core = core
+    instance.env = env
     return instance
 
 cdef void __stdcall publicFilterFunction(const VSMap *inm, VSMap *outm, void *userData, VSCore *core, const VSAPI *vsapi_do_not_use) nogil:
     with gil:
         d = <FilterFuncData>userData
-        try:
-            m = mapToDict(inm, False)
-            ret = d(**m)
-            if not isinstance(ret, dict):
-                if ret is None:
-                    ret = 0
-                ret = {'clip':ret}
-            dictToMap(ret, outm, core, _vsapi)
-        except BaseException, e:
-            emsg = str(e).encode('utf-8')
-            _vsapi.mapSetError(outm, emsg)
+        with use_environment(d.env).use():
+            try:
+                m = mapToDict(inm, False)
+                ret = d(**m)
+                if not isinstance(ret, dict):
+                    if ret is None:
+                        ret = 0
+                    ret = {'clip':ret}
+                dictToMap(ret, outm, core, _vsapi)
+            except BaseException, e:
+                emsg = str(e).encode('utf-8')
+                _vsapi.mapSetError(outm, emsg)
 
 cdef Plugin createPlugin(VSPlugin *plugin, const VSAPI *funcs, Core core):
     cdef Plugin instance = Plugin.__new__(Plugin)

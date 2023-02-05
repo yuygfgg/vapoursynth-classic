@@ -8,14 +8,15 @@ jobs:
     
     strategy:
       matrix:
-        arch: [x86, x64]
+        #arch: [x86, x64]
+        arch: [x64]
         include:
-          - arch: x86
-            platform: Win32
-            bits: 32
-            # unable to diagnose this error during `import vapoursynth`
-            # ImportError: DLL load failed while importing vapoursynth: A dynamic link library (DLL) initialization routine failed.
-            test: false
+          #- arch: x86
+          #  platform: Win32
+          #  bits: 32
+          #  # unable to diagnose this error during `import vapoursynth`
+          #  # ImportError: DLL load failed while importing vapoursynth: A dynamic link library (DLL) initialization routine failed.
+          #  test: false
           - arch: x64
             platform: x64
             bits: 64

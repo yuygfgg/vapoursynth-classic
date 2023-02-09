@@ -1993,7 +1993,7 @@ bool VSCore::loadAllPluginsInPath(const std::string &path, const std::string &fi
         return false;
     do {
         try {
-            loadPlugin(utf16_to_utf8(path + L"\\" + findData.cFileName));
+            loadPluginLazy(utf16_to_utf8(path + L"\\" + findData.cFileName));
         } catch (VSException &e) {
             logMessage(mtWarning, e.what());
         }
@@ -2020,7 +2020,7 @@ bool VSCore::loadAllPluginsInPath(const std::string &path, const std::string &fi
             try {
                 std::string fullname;
                 fullname.append(path).append("/").append(name);
-                loadPlugin(fullname);
+                loadPluginLazy(fullname);
             } catch (VSException &e) {
                 logMessage(mtWarning, e.what());
             }
@@ -2316,8 +2316,8 @@ VSPlugin *VSCore::getNextPlugin(VSPlugin *plugin) {
     }
 }
 
-void VSCore::loadPlugin(const std::string &filename, const std::string &forcedNamespace, const std::string &forcedId, bool altSearchPath) {
-    std::unique_ptr<VSPlugin> p(new VSPlugin(filename, forcedNamespace, forcedId, altSearchPath, this));
+void VSCore::loadPlugin(const std::string &filename, const std::string &forcedNamespace, const std::string &forcedId, bool altSearchPath, bool lazy) {
+    std::unique_ptr<VSPlugin> p(new VSPlugin(filename, forcedNamespace, forcedId, altSearchPath, this, lazy));
 
     std::lock_guard<std::recursive_mutex> lock(pluginLock);
 
@@ -2401,8 +2401,12 @@ static void VS_CC configPlugin3(const char *identifier, const char *defaultNames
     plugin->configPlugin(identifier, defaultNamespace, name, -1, apiVersion, readOnly ? 0 : pcModifiable);
 }
 
-VSPlugin::VSPlugin(const std::string &relFilename, const std::string &forcedNamespace, const std::string &forcedId, bool altSearchPath, VSCore *core)
-    : fnamespace(forcedNamespace), id(forcedId), core(core) {
+VSPlugin::VSPlugin(const std::string &relFilename, const std::string &forcedNamespace, const std::string &forcedId, bool altSearchPath, VSCore *core, bool lazy)
+    : altSearchPath(altSearchPath), fnamespace(forcedNamespace), id(forcedId), core(core) {
+    this->load(relFilename, lazy);
+}
+
+void VSPlugin::load(const std::string &relFilename, bool lazy) {
 #ifdef VS_TARGET_OS_WINDOWS
     std::wstring wPath = utf16_from_utf8(relFilename);
     std::vector<wchar_t> fullPathBuffer(32767 + 1); // add 1 since msdn sucks at mentioning whether or not it includes the final null
@@ -2496,9 +2500,20 @@ VSPlugin::VSPlugin(const std::string &relFilename, const std::string &forcedName
 #endif
         throw VSException("Core only supports API R" + std::to_string(VAPOURSYNTH_API_MAJOR) + "." + std::to_string(VAPOURSYNTH_API_MINOR) + " but the loaded plugin requires API R" + std::to_string(apiMajor) + "." + std::to_string(apiMinor) + "; Filename: " + relFilename + "; Name: " + fullname);
     }
+
+    if (lazy) {
+        unload(true);
+        hasConfig = false;
+        readOnly = false;
+    }
 }
 
-VSPlugin::~VSPlugin() {
+void VSPlugin::unload(bool lazy) {
+    if (lazy) {
+        std::lock_guard<std::mutex> lock(functionLock);
+        for (auto &f: funcs)
+            f.second.setLazy();
+    }
 #ifdef VS_TARGET_OS_WINDOWS
     if (libHandle != INVALID_HANDLE_VALUE && !core->disableLibraryUnloading)
         FreeLibrary(libHandle);
@@ -2506,6 +2521,11 @@ VSPlugin::~VSPlugin() {
     if (libHandle && !core->disableLibraryUnloading)
         dlclose(libHandle);
 #endif
+    libHandle = nullptr;
+}
+
+VSPlugin::~VSPlugin() {
+    unload();
 }
 
 bool VSPlugin::configPlugin(const std::string &identifier, const std::string &pluginNamespace, const std::string &fullname, int pluginVersion, int apiVersion, int flags) {
@@ -2548,9 +2568,22 @@ bool VSPlugin::registerFunction(const std::string &name, const std::string &args
 
     std::lock_guard<std::mutex> lock(functionLock);
 
-    if (funcs.count(name)) {
+    auto it = funcs.find(name);
+    if (it != funcs.end() && !it->second.isLazy()) {
         core->logMessage(mtCritical, "API MISUSE! Tried to register function '" + name + "' more than once for plugin " + id);
         return false;
+    }
+    if (it != funcs.end()) {
+        auto &pf = it->second;
+#if 0 // handle api3 -> api4 args rewrite before enabling these
+        const std::string &oname = pf.getName(), &oargs = pf.getArguments(), &oret = pf.getReturnType();
+        if (oname != name || oargs != args || oret != returnType) {
+            core->logMessage(mtCritical, "API MISUSE! Tried to register function '" + name + "' more than once for plugin " + id + " with different signature: old name " + oname + ", args " + oargs + ", ret type " + oret + "; new name " + name + ", args " + args + ", ret type " + returnType);
+            return false;
+        }
+#endif
+        pf.setFunc(argsFunc, functionData);
+        return true;
     }
 
     try {
@@ -2566,6 +2599,8 @@ bool VSPlugin::registerFunction(const std::string &name, const std::string &args
 VSMap *VSPlugin::invoke(const std::string &funcName, const VSMap &args) {
     auto it = funcs.find(funcName);
     if (it != funcs.end()) {
+        if (it->second.isLazy())
+            load(filename, false);
         return it->second.invoke(args);
     } else {
         VSMap *v = new VSMap();

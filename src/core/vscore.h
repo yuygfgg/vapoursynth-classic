@@ -1007,6 +1007,10 @@ public:
     std::string getV4ArgString() const;
     std::string getV3ArgString() const;
     bool rename(const std::string &newname); // 'vs-c'
+
+    void setLazy() { func = nullptr; functionData = nullptr; }
+    bool isLazy() const { return func == nullptr; }
+    void setFunc(VSPublicFunction f, void *d) { func = f; functionData = d; }
 };
 
 
@@ -1019,6 +1023,7 @@ private:
     bool hasConfig = false;
     bool readOnly = false;
     bool readOnlySet = false;
+    bool altSearchPath = false;
     std::string filename;
     std::string fullname;
     std::string fnamespace;
@@ -1033,7 +1038,9 @@ private:
     VSCore *core;
 public:
     explicit VSPlugin(VSCore *core);
-    VSPlugin(const std::string &relFilename, const std::string &forcedNamespace, const std::string &forcedId, bool altSearchPath, VSCore *core);
+    VSPlugin(const std::string &relFilename, const std::string &forcedNamespace, const std::string &forcedId, bool altSearchPath, VSCore *core, bool lazy = false);
+    void load(const std::string &relFilename, bool lazy = false);
+    void unload(bool lazy = false);
     ~VSPlugin();
     void lock() { readOnly = true; }
     void unlock() { readOnly = false; } // 'vs-c'
@@ -1131,7 +1138,8 @@ public:
     vs3::VSVideoInfo VideoInfoToV3(const VSVideoInfo &vi) noexcept;
     VSVideoInfo VideoInfoFromV3(const vs3::VSVideoInfo &vi) noexcept;
 
-    void loadPlugin(const std::string &filename, const std::string &forcedNamespace = std::string(), const std::string &forcedId = std::string(), bool altSearchPath = false);
+    void loadPlugin(const std::string &filename, const std::string &forcedNamespace = std::string(), const std::string &forcedId = std::string(), bool altSearchPath = false, bool lazy = false);
+    void loadPluginLazy(const std::string &filename, const std::string &forcedNamespace = std::string(), const std::string &forcedId = std::string(), bool altSearchPath = false) { loadPlugin(filename, forcedNamespace, forcedId, altSearchPath, true); }
 
 #ifdef VS_TARGET_OS_WINDOWS
     bool loadAllPluginsInPath(const std::wstring &path, const std::wstring &filter);

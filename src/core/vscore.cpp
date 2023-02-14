@@ -2502,7 +2502,7 @@ void VSPlugin::load(const std::string &relFilename, bool lazy) {
         throw VSException("Core only supports API R" + std::to_string(VAPOURSYNTH_API_MAJOR) + "." + std::to_string(VAPOURSYNTH_API_MINOR) + " but the loaded plugin requires API R" + std::to_string(apiMajor) + "." + std::to_string(apiMinor) + "; Filename: " + relFilename + "; Name: " + fullname);
     }
 
-    if (lazy) {
+    if (lazy && getenv("VSC_DISABLE_LAZY_PLUGIN") == nullptr) {
         unload(true);
         hasConfig = false;
         readOnly = false;
@@ -2600,8 +2600,11 @@ bool VSPlugin::registerFunction(const std::string &name, const std::string &args
 VSMap *VSPlugin::invoke(const std::string &funcName, const VSMap &args) {
     auto it = funcs.find(funcName);
     if (it != funcs.end()) {
-        if (it->second.isLazy())
-            load(filename, false);
+        std::call_once(lazyOnce, [&it, this]() {
+            if (it->second.isLazy()) {
+                load(filename, false);
+            }
+        });
         return it->second.invoke(args);
     } else {
         VSMap *v = new VSMap();

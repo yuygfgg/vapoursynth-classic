@@ -1008,6 +1008,7 @@ public:
     std::string getV3ArgString() const;
     bool rename(const std::string &newname); // 'vs-c'
 
+    // 'vs-c' lazy plugin support
     void setLazy() { func = nullptr; functionData = nullptr; }
     bool isLazy() const { return func == nullptr; }
     void setFunc(VSPublicFunction f, void *d) { func = f; functionData = d; }
@@ -1036,11 +1037,12 @@ private:
     std::map<std::string, VSPluginFunction> funcs;
     std::mutex functionLock;
     VSCore *core;
+    std::once_flag lazyOnce;
 public:
     explicit VSPlugin(VSCore *core);
     VSPlugin(const std::string &relFilename, const std::string &forcedNamespace, const std::string &forcedId, bool altSearchPath, VSCore *core, bool lazy = false);
-    void load(const std::string &relFilename, bool lazy = false);
-    void unload(bool lazy = false);
+    void load(const std::string &relFilename, bool lazy = false); // 'vs-c'
+    void unload(bool lazy = false); // 'vs-c'
     ~VSPlugin();
     void lock() { readOnly = true; }
     void unlock() { readOnly = false; } // 'vs-c'

@@ -22,6 +22,7 @@
 #include "VSHelper4.h"
 #include "VSScript4.h"
 #include "../core/version.h"
+#include "../core/VapourSynth3.h"
 #include "printgraph.h"
 extern "C" {
 #include "md5.h"
@@ -109,6 +110,13 @@ struct VSPipeOptions {
     int64_t endPos = -1;
     int outputIndex = 0;
     int requests = 0;
+    int logLevel = // api3
+#ifdef NDEBUG
+        vs3::mtWarning
+#else
+        vs3::mtDebug
+#endif
+    ;
     bool printProgress = false;
     bool printFilterTime = false;
     bool calculateMD5 = false;
@@ -207,21 +215,18 @@ static std::string channelMaskToName(uint64_t v) {
 
 static const char *messageTypeToString(int msgType) {
     switch (msgType) {
-        case mtDebug: return "Debug";
-        case mtInformation: return "Information";
-        case mtWarning: return "Warning";
-        case mtCritical: return "Critical";
-        case mtFatal: return "Fatal";
-        default: return "";
+        case vs3::mtDebug: return "Debug";
+        //case mtInformation: return "Information";
+        case vs3::mtWarning: return "Warning";
+        case vs3::mtCritical: return "Critical";
+        case vs3::mtFatal: return "Fatal";
+        default: return "???";
     }
 }
 
 static void VS_CC logMessageHandler(int msgType, const char *msg, void *userData) {
-#ifdef NDEBUG
-    if (msgType >= mtInformation)
-#else
-    if (msgType >= mtDebug)
-#endif
+    const VSPipeOptions *opts = (const VSPipeOptions *)userData;
+    if (msgType >= opts->logLevel)
         fprintf(stderr, "%s: %s\n", messageTypeToString(msgType), msg);
 }
 
@@ -948,10 +953,22 @@ int main(int argc, char **argv) {
     }
 
     std::chrono::time_point<std::chrono::steady_clock> scriptEvaluationStart = std::chrono::steady_clock::now();
-    
+
+    // Register a global message handler to handle logs during core creation.
+    {
+        vs3::VSAPI3 *vsapi3 = (vs3::VSAPI3 *)vssapi->getVSAPI(3);
+        vsapi3->addMessageHandler(logMessageHandler, nullptr, (void*)&opts);
+        const char *levelstr = getenv("VSPIPE_LOG_LEVEL");
+        if (levelstr) {
+            opts.logLevel = atoi(levelstr);
+            char buf[128];
+            snprintf(buf, sizeof buf, "Vspipe log level changed to %s.", messageTypeToString(opts.logLevel));
+            vsapi3->logMessage(mtDebug, buf);
+        }
+    }
 
     VSCore *core = vsapi->createCore((opts.mode == VSPipeMode::PrintSimpleGraph || opts.mode == VSPipeMode::PrintFullGraph || opts.printFilterTime) ? ccfEnableGraphInspection : 0);
-    vsapi->addLogHandler(logMessageHandler, nullptr, nullptr, core);
+    //vsapi->addLogHandler(logMessageHandler, nullptr, (void*)&opts, core);
     VSScript *se = vssapi->createScript(core);
     vssapi->evalSetWorkingDir(se, opts.preserveCwd ? 0:1);
     if (!opts.scriptArgs.empty()) {

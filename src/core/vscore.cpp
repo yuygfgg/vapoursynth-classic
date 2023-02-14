@@ -1603,20 +1603,21 @@ void VSCore::logMessage(VSMessageType type, const char *msg) {
     std::lock_guard<std::mutex> lock(logMutex);
     for (auto iter : messageHandlers)
         iter->handler(type, msg, iter->userData);
+    const bool handled = !messageHandlers.empty();
 
     switch (type) {
         case mtDebug:
-            vsLog3(vs3::mtDebug, "%s", msg);
+            vsLog3(handled, vs3::mtDebug, "%s", msg);
             break;
         case mtInformation:
         case mtWarning:
-            vsLog3(vs3::mtWarning, "%s", msg);
+            vsLog3(handled, vs3::mtWarning, "%s", msg);
             break;
         case mtCritical:
-            vsLog3(vs3::mtCritical, "%s", msg);
+            vsLog3(handled, vs3::mtCritical, "%s", msg);
             break;
         case mtFatal:
-            vsLog3(vs3::mtFatal, "%s", msg);
+            vsLog3(handled, vs3::mtFatal, "%s", msg);
             break;
     }
 
@@ -2455,7 +2456,7 @@ void VSPlugin::load(const std::string &relFilename, bool lazy) {
 
     if (!libHandle) {
         const char *dlError = dlerror();
-        fprintf(stderr, "WARNING: VS failed to load %s, error = %s\n", relFilename.c_str(), dlError);
+        //fprintf(stderr, "WARNING: VS failed to load %s, error = %s\n", relFilename.c_str(), dlError);
         if (dlError)
             throw VSException("Failed to load " + relFilename + ". Error given: " + dlError);
         else

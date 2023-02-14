@@ -33,7 +33,7 @@ extern "C" {
 void vsSetMessageHandler3(vs3::VSMessageHandler handler, void *userData);
 int vsAddMessageHandler3(vs3::VSMessageHandler handler, vs3::VSMessageHandlerFree free, void *userData);
 int vsRemoveMessageHandler3(int id);
-void vsLog3(vs3::VSMessageType type, const char *msg, ...);
+void vsLog3(bool handled, vs3::VSMessageType type, const char *msg, ...);
 
 #ifdef __cplusplus
 }

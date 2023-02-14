@@ -74,7 +74,17 @@ int vsRemoveMessageHandler3(int id) {
     return vsRemoveMessageHandlerInternal(id);
 }
 
-void vsLog3(vs3::VSMessageType type, const char *msg, ...) {
+static const char *messageTypeToString(vs3::VSMessageType msgType) {
+    switch (msgType) {
+        case vs3::mtDebug: return "Debug";
+        case vs3::mtWarning: return "Warning";
+        case vs3::mtCritical: return "Critical";
+        case vs3::mtFatal: return "Fatal";
+        default: return "";
+    }
+}
+
+void vsLog3(bool handled, vs3::VSMessageType type, const char *msg, ...) {
     std::lock_guard<std::mutex> lock(logMutex);
     if (!messageHandlers.empty()) {
         try {
@@ -96,9 +106,10 @@ void vsLog3(vs3::VSMessageType type, const char *msg, ...) {
             va_end(alist);
             fprintf(stderr, "\n");
         }
-    } else {
+    } else if (!handled) {
         va_list alist;
         va_start(alist, msg);
+        fprintf(stderr, "%s: ", messageTypeToString(type));
         vfprintf(stderr, msg, alist);
         va_end(alist);
         fprintf(stderr, "\n");

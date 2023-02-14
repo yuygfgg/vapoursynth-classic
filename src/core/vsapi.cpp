@@ -903,7 +903,7 @@ static int VS_CC removeLogHandler(VSLogHandle *handle, VSCore *core) VS_NOEXCEPT
 }
 
 static void VS_CC logMessage3(int msgType, const char *msg) VS_NOEXCEPT {
-    vsLog3(static_cast<vs3::VSMessageType>(msgType), "%s", msg);
+    vsLog3(false, static_cast<vs3::VSMessageType>(msgType), "%s", msg);
 }
 
 static int VS_CC addMessageHandler3(VSLogHandler handler, VSLogHandlerFree free, void *userData) VS_NOEXCEPT {

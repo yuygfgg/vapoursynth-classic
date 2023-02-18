@@ -16,10 +16,10 @@ jobs:
     - name: Print compiler version
       run: ${{ env.CC }} --version
 
-    - name: Install automake
+    - name: Install autotools
       run: |
         brew update
-        brew install automake
+        brew install automake autoconf libtool pkg-config
 
     - name: Install zimg
       run: |

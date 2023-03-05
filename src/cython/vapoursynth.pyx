@@ -2616,7 +2616,7 @@ cdef void __stdcall publicFilterFunction(const VSMap *inm, VSMap *outm, void *us
                     ret = {'clip':ret}
                 dictToMap(ret, outm, core, _vsapi)
             except BaseException, e:
-                emsg = str(e).encode('utf-8')
+                emsg = (str(e) + '\n\n' + traceback.format_exc()).encode('utf-8')
                 _vsapi.mapSetError(outm, emsg)
 
 cdef Plugin createPlugin(VSPlugin *plugin, const VSAPI *funcs, Core core):
@@ -2826,7 +2826,7 @@ cdef void __stdcall publicFunction(const VSMap *inm, VSMap *outm, void *userData
                     ret = {'val':ret}
                 dictToMap(ret, outm, core, vsapi)
         except BaseException, e:
-            emsg = str(e).encode('utf-8')
+            emsg = (str(e) + '\n\n' + traceback.format_exc()).encode('utf-8')
             vsapi.mapSetError(outm, emsg)
 
 

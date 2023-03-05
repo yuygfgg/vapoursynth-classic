@@ -63,7 +63,7 @@ class FilterTestSequence(unittest.TestCase):
         self.assertEqual(self.cb_node, self.fail_filter)
         self.assertEqual(self.cb_n, 0)
         self.assertIsInstance(self.cb_result, vs.Error)
-        self.assertEqual(str(self.cb_result), "Fail")
+        self.assertEqual(str(self.cb_result)[:6], "Fail\n\n")
 
     def test_raw_cb_fut_slow(self):
         fut = Future()

@@ -2170,6 +2170,10 @@ VSCore::VSCore(int flags) :
             // and accidentally block updated bundled versions
             std::wstring globalPluginPath = dllPath + L"vapoursynth" + bits + L"\\plugins";
             loadAllPluginsInPath(globalPluginPath, filter);
+
+            // Also try shortened path /plugins32 or /plugins64.
+            globalPluginPath = dllPath + L"plugins" + bits;
+            loadAllPluginsInPath(globalPluginPath, filter);
         }
     } else {
         // Autoload user specific plugins first so a user can always override

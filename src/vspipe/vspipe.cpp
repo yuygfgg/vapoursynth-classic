@@ -124,7 +124,7 @@ struct VSPipeOptions {
     nstring scriptFilename;
     nstring outputFilename;
     nstring timecodesFilename;
-    std::map<std::string, std::string> scriptArgs;
+    std::vector<std::pair<std::string, std::string>> scriptArgs;
 };
 
 // All state used for outputting frames
@@ -658,6 +658,7 @@ static void printHelp() {
         "\n"
         "Available options:\n"
         "  -a, --arg key=value              Argument to pass to the script environment\n"
+        "                                   Multiple settings of the same variable will be turned into a list.\n"
         "  -s, --start N                    Set output frame/sample range start\n"
         "  -e, --end N                      Set output frame/sample range end (inclusive)\n"
         "  -o, --outputindex N              Select output index\n"
@@ -841,7 +842,7 @@ static int parseOptions(VSPipeOptions &opts, int argc, T **argv) {
                 return 1;
             }
 
-            opts.scriptArgs[aLine.substr(0, equalsPos)] = aLine.substr(equalsPos + 1);
+            opts.scriptArgs.emplace_back(aLine.substr(0, equalsPos), aLine.substr(equalsPos + 1));
 
             arg++;
         } else if (argString == NSTRING("-t") || argString == NSTRING("--timecodes")) {
@@ -971,7 +972,7 @@ int main(int argc, char **argv) {
     //vsapi->addLogHandler(logMessageHandler, nullptr, (void*)&opts, core);
     VSScript *se = vssapi->createScript(core);
     vssapi->evalSetWorkingDir(se, opts.preserveCwd ? 0:1);
-    if (!opts.scriptArgs.empty()) {
+    if (opts.scriptArgs.size()) {
         VSMap *foldedArgs = vsapi->createMap();
         for (const auto &iter : opts.scriptArgs)
             vsapi->mapSetData(foldedArgs, iter.first.c_str(), iter.second.c_str(), static_cast<int>(iter.second.size()), dtUtf8, maAppend);

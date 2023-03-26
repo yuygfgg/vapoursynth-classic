@@ -835,14 +835,14 @@ static int parseOptions(VSPipeOptions &opts, int argc, T **argv) {
                 return 1;
             }
 
-            std::string aLine = nstringToUtf8(argv[arg + 1]).c_str();
-            size_t equalsPos = aLine.find("=");
+            std::string line = nstringToUtf8(argv[arg + 1]).c_str();
+            size_t equalsPos = line.find("=");
             if (equalsPos == std::string::npos) {
-                fprintf(stderr, "No value specified for argument: %s\n", aLine.c_str());
+                fprintf(stderr, "No value specified for argument: %s\n", line.c_str());
                 return 1;
             }
 
-            opts.scriptArgs.emplace_back(aLine.substr(0, equalsPos), aLine.substr(equalsPos + 1));
+            opts.scriptArgs.emplace_back(line.substr(0, equalsPos), line.substr(equalsPos + 1));
 
             arg++;
         } else if (argString == NSTRING("-t") || argString == NSTRING("--timecodes")) {

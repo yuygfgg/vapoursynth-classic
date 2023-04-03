@@ -334,6 +334,7 @@ public:
             data->data.clear();
         else
             data = new VSMapStorage();
+        data->error = false;
     }
 
     const char *key(size_t n) const {

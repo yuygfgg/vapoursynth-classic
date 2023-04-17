@@ -2507,26 +2507,33 @@ void VSPlugin::load(const std::string &relFilename, bool lazy) {
     }
 
     if (lazy && getenv("VSC_DISABLE_LAZY_PLUGIN") == nullptr) {
-        unload(true);
-        hasConfig = false;
-        readOnly = false;
+        if (unload(true)) {
+            hasConfig = false;
+            readOnly = false;
+        }
     }
 }
 
-void VSPlugin::unload(bool lazy) {
+bool VSPlugin::unload(bool lazy) {
+#ifdef VS_TARGET_OS_WINDOWS
+    if (libHandle != INVALID_HANDLE_VALUE && !core->disableLibraryUnloading)
+        FreeLibrary(libHandle);
+#else
+    if (libHandle && !core->disableLibraryUnloading) {
+        dlclose(libHandle);
+        if (dlopen(filename.c_str(), RTLD_NOLOAD)) {
+            //if (lazy) fprintf(stderr, "unloading %s failed\n", filename.c_str());
+            return false;
+        }
+    }
+#endif
+    libHandle = nullptr;
     if (lazy) {
         std::lock_guard<std::mutex> lock(functionLock);
         for (auto &f: funcs)
             f.second.setLazy();
     }
-#ifdef VS_TARGET_OS_WINDOWS
-    if (libHandle != INVALID_HANDLE_VALUE && !core->disableLibraryUnloading)
-        FreeLibrary(libHandle);
-#else
-    if (libHandle && !core->disableLibraryUnloading)
-        dlclose(libHandle);
-#endif
-    libHandle = nullptr;
+    return true;
 }
 
 VSPlugin::~VSPlugin() {

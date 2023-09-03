@@ -36,6 +36,7 @@ from cpython.number cimport PyIndex_Check
 from cpython.number cimport PyNumber_Index
 from cpython.ref cimport Py_INCREF, Py_DECREF
 import os
+import enum
 import ctypes
 import threading
 import traceback
@@ -188,12 +189,12 @@ cdef void _unset_logger(EnvironmentData env):
     env.log = NULL
 
 
-cdef void __stdcall _logCb(int msgType, const char *msg, void *userData) nogil:
+cdef void __stdcall _logCb(int msgType, const char *msg, void *userData) noexcept nogil:
     with gil:
         message = msg.decode("utf-8")
         (<object>userData)(MessageType(msgType), message)
 
-cdef void __stdcall _logFree(void* userData) nogil:
+cdef void __stdcall _logFree(void* userData) noexcept nogil:
     with gil:
         Py_DECREF(<object>userData)
 
@@ -714,7 +715,7 @@ cdef FramePtr createFramePtr(const VSFrame *f, const VSAPI *funcs):
     return instance
 
 
-cdef void __stdcall frameDoneCallback(void *data, const VSFrame *f, int n, VSNode *node, const char *errormsg) nogil:
+cdef void __stdcall frameDoneCallback(void *data, const VSFrame *f, int n, VSNode *node, const char *errormsg) noexcept nogil:
     with gil:
         d = <CallbackData>data
         try:
@@ -800,7 +801,7 @@ cdef void dictToMap(dict ndict, VSMap *inm, VSCore *core, const VSAPI *funcs) ex
                 val = [val]     
 
         for v in val:
-            if isinstance(v, int):
+            if isinstance(v, (int, enum.Flag)):
                 if funcs.mapSetInt(inm, ckey, int(v), 1) != 0:
                     raise Error('not all values are of the same type in ' + key)
             elif isinstance(v, float):
@@ -839,7 +840,7 @@ cdef void typedDictToMap(dict ndict, dict atypes, VSMap *inm, VSCore *core, cons
         if val is None:
             continue
 
-        if isinstance(val, (str, bytes, bytearray, RawNode, RawFrame)) or not isinstance(val, Iterable):
+        if isinstance(val, (str, bytes, bytearray, enum.Flag, RawNode, RawFrame)) or not isinstance(val, Iterable):
             val = [val]
 
         for v in val:
@@ -1050,7 +1051,7 @@ cdef class FrameProps(object):
                     tf = createFuncPython(v, self.core, self.funcs)
                     if funcs.mapSetFunction(m, b, tf.ref, 1) != 0:
                         raise Error('Not all values are of the same type')
-                elif isinstance(v, int):
+                elif isinstance(v, (int, enum.Flag)):
                     if funcs.mapSetInt(m, b, int(v), 1) != 0:
                         raise Error('Not all values are of the same type')
                 elif isinstance(v, float):
@@ -2186,11 +2187,11 @@ cdef LogHandle createLogHandle(object handler_func):
     instance.handle = NULL
     return instance
      
-cdef void __stdcall log_handler_wrapper(int msgType, const char *msg, void *userData) nogil:
+cdef void __stdcall log_handler_wrapper(int msgType, const char *msg, void *userData) noexcept nogil:
     with gil:
         (<LogHandle>userData).handler_func(MessageType(msgType), msg.decode('utf-8'))
         
-cdef void __stdcall log_handler_free(void *userData) nogil:
+cdef void __stdcall log_handler_free(void *userData) noexcept nogil:
     with gil:
         Py_DECREF(<LogHandle>userData)
 
@@ -2603,7 +2604,7 @@ cdef FilterFuncData createFilterFuncData(object func, EnvironmentData env):
     instance.env = env
     return instance
 
-cdef void __stdcall publicFilterFunction(const VSMap *inm, VSMap *outm, void *userData, VSCore *core, const VSAPI *vsapi_do_not_use) nogil:
+cdef void __stdcall publicFilterFunction(const VSMap *inm, VSMap *outm, void *userData, VSCore *core, const VSAPI *vsapi_do_not_use) noexcept nogil:
     with gil:
         d = <FilterFuncData>userData
         with use_environment(d.env).use():
@@ -2806,14 +2807,14 @@ class PythonVSScriptLoggingBridge(logging.Handler):
 
         core.log_message(mt, message)
 
-cdef void __stdcall freeFunc(void *pobj) nogil:
+cdef void __stdcall freeFunc(void *pobj) noexcept nogil:
     with gil:
         fobj = <FuncData>pobj
         Py_DECREF(fobj)
         fobj = None
 
 
-cdef void __stdcall publicFunction(const VSMap *inm, VSMap *outm, void *userData, VSCore *core, const VSAPI *vsapi) nogil:
+cdef void __stdcall publicFunction(const VSMap *inm, VSMap *outm, void *userData, VSCore *core, const VSAPI *vsapi) noexcept nogil:
     with gil:
         d = <FuncData>userData
         try:

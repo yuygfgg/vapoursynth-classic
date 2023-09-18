@@ -24,6 +24,7 @@
 #include "../core/version.h"
 #include "../core/VapourSynth3.h"
 #include "printgraph.h"
+#include "vsjson.h"
 extern "C" {
 #include "md5.h"
 }
@@ -124,6 +125,7 @@ struct VSPipeOptions {
     nstring scriptFilename;
     nstring outputFilename;
     nstring timecodesFilename;
+    nstring jsonFilename;
     std::vector<std::pair<std::string, std::string>> scriptArgs;
 };
 
@@ -170,6 +172,9 @@ struct VSPipeOutputData {
     FILE *timecodesFile = nullptr;
     int64_t currentTimecodeNum = 0;
     int64_t currentTimecodeDen = 1;
+
+    /* JSON output */
+    FILE *jsonFile = nullptr;
 };
 
 /////////////////////////////////////////////
@@ -395,6 +400,15 @@ static void VS_CC frameDoneCallback(void *userData, const VSFrame *f, int n, VSN
                         }
                     }
                 }
+
+                if (data->jsonFile && !data->outputError) {
+                    if (fprintf(data->jsonFile, "\t%s%s\n", convertVSMapToJSON(data->vsapi->getFramePropertiesRO(frame), data->vsapi).c_str(), (data->totalFrames - 1 != data->outputFrames) ? "," : "") < 0) {
+                        if (data->errorMessage.empty())
+                            data->errorMessage = "Error: failed to write JSON for frame " + std::to_string(data->outputFrames) + ". errno: " + std::to_string(errno);
+                        data->totalFrames = data->requestedFrames;
+                        data->outputError = true;
+                    }
+                }
             }
             data->vsapi->freeFrame(frame);
             data->vsapi->freeFrame(alphaFrame);
@@ -517,7 +531,25 @@ static bool initializeVideoOutput(VSPipeOutputData *data) {
         }
     }
 
+    if (data->jsonFile && !data->outputError) {
+        if (fprintf(data->jsonFile, "%s", "[\n") < 0) {
+            fprintf(stderr, "Error: failed to write JSON file header, errno: %d\n", errno);
+            return false;
+        }
+    }
+
     data->buffer.resize(vi->width * vi->height * vi->format.bytesPerSample);
+    return true;
+}
+
+static bool finalizeVideoOutput(VSPipeOutputData *data) {
+    if (data->jsonFile && !data->outputError) {
+        if (fprintf(data->jsonFile, "%s", "]\n") < 0) {
+            fprintf(stderr, "Error: failed to finalize JSON file, errno: %d\n", errno);
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -666,6 +698,7 @@ static void printHelp() {
         "  -c, --container <y4m/wav/w64>    Add headers for the specified format to the output\n"
         "  -c, --preserve-cwd               Don't temporarily change the working directory to the script directory\n"
         "  -t, --timecodes FILE             Write timecodes v2 file\n"
+        "  -j, --json FILE                  Write properties of output frames to JSON file\n"
         "  -p, --progress                   Print progress to stderr\n"
         "      --filter-time                Prints time spent in individual filters after processing\n"
         "  -i, --info                       Show output node info and exit\n"
@@ -854,6 +887,15 @@ static int parseOptions(VSPipeOptions &opts, int argc, T **argv) {
             opts.timecodesFilename = argv[arg + 1];
 
             arg++;
+        } else if (argString == NSTRING("-j") || argString == NSTRING("--json")) {
+            if (argc <= arg + 1) {
+                fprintf(stderr, "No JSON file specified\n");
+                return 1;
+            }
+
+            opts.jsonFilename = argv[arg + 1];
+
+            arg++;
         } else if (opts.scriptFilename.empty() && !argString.empty() && argString.substr(0, 1) != NSTRING("-")) {
             opts.scriptFilename = argString;
         } else if (opts.outputFilename.empty() && !argString.empty() && (argString == NSTRING("-") || (argString.substr(0, 1) != NSTRING("-")))) {
@@ -943,6 +985,19 @@ int main(int argc, char **argv) {
 #endif
         if (!timecodesFile) {
             fprintf(stderr, "Failed to open timecodes file for writing\n");
+            return 1;
+        }
+    }
+
+    FILE *jsonFile = nullptr;
+    if (opts.mode == VSPipeMode::Output && !opts.jsonFilename.empty()) {
+#ifdef VS_TARGET_OS_WINDOWS
+        jsonFile = _wfopen(opts.jsonFilename.c_str(), L"wb");
+#else
+        jsonFile = fopen(opts.jsonFilename.c_str(), "wb");
+#endif
+        if (!jsonFile) {
+            fprintf(stderr, "Failed to open JSON file for writing\n");
             return 1;
         }
     }
@@ -1069,6 +1124,7 @@ int main(int argc, char **argv) {
         data->alphaNode = alphaNode;
         data->outFile = outFile;
         data->timecodesFile = timecodesFile;
+        data->jsonFile = jsonFile;
         
         if (nodeType == mtVideo) {
 
@@ -1119,6 +1175,8 @@ int main(int argc, char **argv) {
                     data->lastFPSReportTime = std::chrono::steady_clock::now();
                     success = !outputNode(opts, data.get(), vssapi->getCore(se));
                 }
+                if (success)
+                    success = finalizeVideoOutput(data.get());
             }
         } else if (nodeType == mtAudio) {
 
@@ -1155,6 +1213,8 @@ int main(int argc, char **argv) {
             fflush(outFile);
         if (timecodesFile)
             fflush(timecodesFile);
+        if (jsonFile)
+            fflush(jsonFile);
 
         std::chrono::duration<double> elapsedSeconds = std::chrono::steady_clock::now() - data->startTime;
         if (opts.mode == VSPipeMode::Output) {
@@ -1181,7 +1241,8 @@ int main(int argc, char **argv) {
         fclose(outFile);
     if (timecodesFile)
         fclose(timecodesFile);
-
+    if (jsonFile)
+        fclose(jsonFile);
 
     vsapi->freeNode(node);
     vsapi->freeNode(alphaNode);

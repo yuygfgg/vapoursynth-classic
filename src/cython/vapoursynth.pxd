@@ -313,8 +313,8 @@ cdef extern from "include/VapourSynth4.h" nogil:
         void freeFunction(VSFunction *f) nogil
         VSFunction *addFunctionRef(VSFunction *f) nogil
         void callFunction(VSFunction *func, const VSMap *inm, VSMap *outm) nogil
-    
-        # Map and proptery access
+
+        # Map and property access
         VSMap *createMap() nogil
         void freeMap(VSMap *map) nogil
         void clearMap(VSMap *map) nogil

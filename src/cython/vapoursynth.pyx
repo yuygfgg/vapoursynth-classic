@@ -2237,6 +2237,12 @@ cdef class Core(object):
             new_size = new_size * 1024 * 1024
             self.funcs.setMaxCacheSize(new_size, self.core)
 
+    @property
+    def used_cache_size(self):
+        cdef VSCoreInfo v
+        self.funcs.getCoreInfo(self.core, &v)
+        return v.usedFramebufferSize
+
     def __getattr__(self, name):
         cdef VSPlugin *plugin
         tname = name.encode('utf-8')

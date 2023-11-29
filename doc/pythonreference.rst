@@ -211,6 +211,10 @@ Classes and Functions
       Set the upper framebuffer cache size after which memory is aggressively
       freed. The value is in megabytes.
 
+   .. py:attribute:: used_cache_size
+
+      The size of the core's current cache. The value is in bytes.
+
    .. py:method:: plugins()
 
       Containing all loaded plugins.

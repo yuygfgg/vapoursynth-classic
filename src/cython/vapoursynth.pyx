@@ -1791,15 +1791,15 @@ cdef class VideoNode(RawNode):
             raise ValueError('Requesting frame number is beyond the last frame')
 
     def get_frame(self, int n):
-        cdef char errorMsg[512]
+        cdef char errorMsg[4096]
         cdef char *ep = errorMsg
         cdef const VSFrame *f
         self.ensure_valid_frame_number(n)
-        
+
         gc.collect()
 
         with nogil:
-            f = self.funcs.getFrame(n, self.node, errorMsg, 500)
+            f = self.funcs.getFrame(n, self.node, errorMsg, 4096)
         if f == NULL:
             if (errorMsg[0]):
                 raise Error(ep.decode('utf-8'))
@@ -2048,15 +2048,15 @@ cdef class AudioNode(RawNode):
             raise ValueError('Requesting frame number is beyond the last frame')
 
     def get_frame(self, int n):
-        cdef char errorMsg[512]
+        cdef char errorMsg[4096]
         cdef char *ep = errorMsg
         cdef const VSFrame *f
         self.ensure_valid_frame_number(n)
-        
+
         gc.collect()
 
         with nogil:
-            f = self.funcs.getFrame(n, self.node, errorMsg, 500)
+            f = self.funcs.getFrame(n, self.node, errorMsg, 4096)
         if f == NULL:
             if (errorMsg[0]):
                 raise Error(ep.decode('utf-8'))

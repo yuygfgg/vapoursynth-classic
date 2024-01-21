@@ -555,7 +555,7 @@ class vszimg {
             lookup_enum(in, "chromaloc_in", g_chromaloc_table, &m_frame_params_in.chromaloc, vsapi);
 
             m_params.cpu_type = ZIMG_CPU_AUTO_64B;
-            m_params.allow_approximate_gamma = 1;
+            m_params.allow_approximate_gamma = propGetScalarDef<int>(in, "approximate_gamma", 1, vsapi);
             m_params.resample_filter = static_cast<zimg_resample_filter_e>(reinterpret_cast<intptr_t>(userData));
             m_params.filter_param_a = propGetScalarDef<double>(in, "filter_param_a", m_params.filter_param_a, vsapi);
             m_params.filter_param_b = propGetScalarDef<double>(in, "filter_param_b", m_params.filter_param_b, vsapi);
@@ -894,7 +894,8 @@ void resizeInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi) {
         FLOAT_OPT(src_top)
         FLOAT_OPT(src_width)
         FLOAT_OPT(src_height)
-        FLOAT_OPT(nominal_luminance);
+        FLOAT_OPT(nominal_luminance)
+        INT_OPT(approximate_gamma);
 #undef INT_OPT
 #undef FLOAT_OPT
 #undef DATA_OPT

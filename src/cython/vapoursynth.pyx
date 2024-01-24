@@ -2488,6 +2488,14 @@ cdef class Plugin(object):
 
         return PluginVersion(ver_major, ver_minor)
 
+    @property
+    def plugin_path(self):
+        cdef const char *ppath = self.funcs.getPluginPath(self.plugin)
+        if ppath:
+            return ppath.decode('utf-8')
+        else:
+            return None
+
     def get_functions(self):
         #import warnings
         #warnings.warn("get_functions() is deprecated. Use \"functions()\" instead.", DeprecationWarning)

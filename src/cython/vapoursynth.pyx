@@ -2252,7 +2252,7 @@ cdef class Core(object):
         if plugin:
             return createPlugin(plugin, self.funcs, self)
         else:
-            raise AttributeError('No attribute with the name ' + name + ' exists. Did you mistype a plugin namespace?')
+            raise AttributeError('No attribute with the name ' + name + ' exists. Did you mistype a plugin namespace or forget to install a plugin?')
 
     def set_max_cache_size(self, int mb):
         import warnings

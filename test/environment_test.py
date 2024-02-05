@@ -85,3 +85,7 @@ class EnvironmentTest(unittest.TestCase):
     test_environment_use_unsets_environment_on_exit = subprocess_runner(t_environment_use_unsets_environment_on_exit)
     test_environment_use_restores_environment_on_exit = subprocess_runner(t_environment_use_restores_environment_on_exit)
 
+
+
+if __name__ == '__main__':
+    unittest.main()

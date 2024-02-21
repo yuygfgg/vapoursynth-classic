@@ -2494,8 +2494,6 @@ static const VSFrame *VS_CC copyFramePropsGetFrame(int n, int activationReason, 
             }
         }
 
-        vsapi->clearMap(dstprops);
-        vsapi->copyMap(vsapi->getFramePropertiesRO(src), dstprops);
         vsapi->freeFrame(src);
         return dst;
     }

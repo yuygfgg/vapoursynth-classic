@@ -119,9 +119,7 @@ jobs:
     - name: Setup Python 3.12
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12.0-alpha.1 - 3.12.99'
-        # Cython has yet to support this change (https://github.com/python/cpython/commit/c1b1f51cd1632f0b77dacd43092fb44ed5e053a9) in 3.12.0-alpha.5:
-        #python-version: '3.12.0-alpha.4'
+        python-version: '3.12'
         architecture: ${{ matrix.arch }}
 
     - name: Install Python 3.12 cython and Save Path

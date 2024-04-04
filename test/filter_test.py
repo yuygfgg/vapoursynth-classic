@@ -20,5 +20,12 @@ class FilterTestSequence(unittest.TestCase):
         clip = self.BlankClip(format=vs.YUV444PS, color=[0, 0, 0], width=1156, height=752)
         self.Transpose(clip).get_frame(0)
 
+    def test_setframeprops(self):
+        """ https://github.com/vapoursynth/vapoursynth/issues/1046 """
+        matrix = vs.MatrixCoefficients.MATRIX_ST170_M
+        clip = self.BlankClip(format=vs.GRAY8, width=1, height=1)
+        clip = clip.std.SetFrameProps(_Matrix=matrix)
+        self.assertEqual(clip.get_frame(0).props["_Matrix"], int(matrix))
+
 if __name__ == '__main__':
     unittest.main()

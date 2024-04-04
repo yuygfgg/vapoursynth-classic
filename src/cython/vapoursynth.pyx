@@ -840,7 +840,7 @@ cdef void typedDictToMap(dict ndict, dict atypes, VSMap *inm, VSCore *core, cons
         if val is None:
             continue
 
-        if isinstance(val, (str, bytes, bytearray, enum.Flag, RawNode, RawFrame, enum.Flag)) or not isinstance(val, Iterable):
+        if isinstance(val, (str, bytes, bytearray, enum.Flag, RawNode, RawFrame)) or not isinstance(val, Iterable):
             val = [val]
 
         for v in val:

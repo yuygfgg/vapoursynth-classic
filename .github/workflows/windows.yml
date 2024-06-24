@@ -35,6 +35,8 @@ jobs:
         git clone https://github.com/AmusementClub/zimg --branch v3.0
         # revert the upgrade to msvc 2022 commit as we're still using 2019.
         pushd zimg
+        # revert "resize: fix off by one error in AVX-512 vertical fp resizer"
+        git checkout e5b0de6
         git show 021ac40e5f350b19183bed25d498f437516da454 | patch -p1 -R
         popd
         git clone https://github.com/AviSynth/AviSynthPlus.git --depth 1

@@ -106,6 +106,9 @@ static void doGetCPUFeatures(CPUFeatures *cpuFeatures) {
 static void doGetCPUFeatures(CPUFeatures *cpuFeatures) {
     memset(cpuFeatures, 0, sizeof(CPUFeatures));
     cpuFeatures->can_run_vs = 1;
+    #ifdef __ARM_NEON__
+    cpuFeatures->neon = 1;
+    #endif
 }
 #endif
 

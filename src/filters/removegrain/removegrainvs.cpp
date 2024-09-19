@@ -16,7 +16,7 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 
 #include "shared.h"
 
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
 class ConvSigned
 {
 public:
@@ -111,7 +111,7 @@ public:
 
         return (limit (c, mi, ma));
     }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg (const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
         AvsFilterRemoveGrain16_READ_PIX
@@ -140,7 +140,7 @@ public:
 
         return (limit (c, a [2-1], a [7-1]));
     }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg (const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
         AvsFilterRemoveGrain16_READ_PIX
@@ -184,7 +184,7 @@ public:
 
         return (limit (c, a [3-1], a [6-1]));
     }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg (const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
         AvsFilterRemoveGrain16_READ_PIX
@@ -228,7 +228,7 @@ public:
 
         return (limit (c, a [4-1], a [5-1]));
     }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg (const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
         // http://en.wikipedia.org/wiki/Batcher_odd%E2%80%93even_mergesort
@@ -289,7 +289,7 @@ public:
 
             return (limit(c, mi1, ma1));
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -367,7 +367,7 @@ public:
 
             return (cli1);
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -453,7 +453,7 @@ public:
 
             return (cli1);
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -539,7 +539,7 @@ public:
 
             return (cli1);
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -614,7 +614,7 @@ public:
 
             return (limit(c, mi1, ma1));
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -678,7 +678,7 @@ public:
 
             return (a4);
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -721,7 +721,7 @@ public:
 };
 
 
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
 class OpRG12sse2
 {
 public:
@@ -765,7 +765,7 @@ public:
 
         return (val);
     }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg (const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
         return (OpRG12sse2::rg (src_ptr, stride_src, mask_sign));
@@ -779,7 +779,7 @@ public:
     static __forceinline int rg (int c, int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8) {
         return (OpRG11::rg (c, a1, a2, a3, a4, a5, a6, a7, a8));
     }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg (const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
         return (OpRG12sse2::rg(src_ptr, stride_src, mask_sign));
@@ -844,7 +844,7 @@ public:
 
             return (limit(c, std::min(l, u), std::max(l, u)));
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -890,7 +890,7 @@ public:
 
             return (limit(c, std::min(a1, a8), std::max(a1, a8)));
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -966,7 +966,7 @@ public:
 
         return (val);
     }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg (const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
         AvsFilterRemoveGrain16_READ_PIX
@@ -1002,7 +1002,7 @@ public:
 
         return (val);
     }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
         AvsFilterRemoveGrain16_READ_PIX
@@ -1062,7 +1062,7 @@ public:
 
             return (limit(c, mi, ma));
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -1125,7 +1125,7 @@ public:
 
             return (limit(c, mi, ma));
         }
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
     template<typename T>
     static __forceinline __m128i rg(const T *src_ptr, ptrdiff_t stride_src, __m128i mask_sign) {
             AvsFilterRemoveGrain16_READ_PIX
@@ -1236,7 +1236,7 @@ public:
 
 
 
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
 ALIGNED_ARRAY(const uint16_t    OpRG12sse2::_bias [8], 16) =
 { 1, 1, 1, 1, 1, 1, 1, 1 };
 
@@ -1319,7 +1319,7 @@ static void process_row_cpp (T *dst_ptr, const T *src_ptr, ptrdiff_t stride_src,
     }
 }
 
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
 static void process_subplane_sse2 (const T *src_ptr, ptrdiff_t stride_src, T *dst_ptr, ptrdiff_t stride_dst, int width, int height)
 {
     const int        y_b = 1;
@@ -1437,7 +1437,7 @@ static const VSFrame *VS_CC removeGrainGetFrame(int n, int activationReason, voi
 #define PROC_ARGS_16(op) PlaneProc <op, uint16_t>::do_process_plane_cpp<op, uint16_t>(src_frame, dst_frame, i, vsapi); break;
 #define PROC_ARGS_8(op) PlaneProc <op, uint16_t>::do_process_plane_cpp<op, uint8_t>(src_frame, dst_frame, i, vsapi); break;
 
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
 #define PROC_ARGS_16_FAST(op) PlaneProc <op, uint16_t>::do_process_plane_sse2<op, uint16_t>(src_frame, dst_frame, i, vsapi); break;
 #define PROC_ARGS_8_FAST(op) PlaneProc <op, uint8_t>::do_process_plane_sse2<op, uint8_t>(src_frame, dst_frame, i, vsapi); break;
 #else

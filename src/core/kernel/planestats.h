@@ -73,6 +73,16 @@ DECL_2(word, avx2)
 DECL_2(float, avx2)
 #endif /* VS_TARGET_CPU_X86 */
 
+#ifdef __ARM_NEON__
+DECL_1(byte, neon)
+DECL_1(word, neon)
+DECL_1(float, neon)
+
+DECL_2(byte, neon)
+DECL_2(word, neon)
+DECL_2(float, neon)
+#endif
+
 #undef DECL_2
 #undef DECL_1
 

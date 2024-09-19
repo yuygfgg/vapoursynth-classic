@@ -47,6 +47,8 @@ typedef struct CPUFeatures {
     char avx512_bw;
     char avx512_dq;
     char avx512_vl;
+#elif defined(__ARM_NEON__)
+    char neon;
 #endif
 } CPUFeatures;
 

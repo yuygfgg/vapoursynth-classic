@@ -75,6 +75,13 @@ libvapoursynth_la_SOURCES = src/core/audiofilters.cpp \
 							src/core/vsresize.cpp \
 							src/core/vsthreadpool.cpp \
 							src/core/x86utils.h
+if ARMASM
+libvapoursynth_la_SOURCES += src/core/kernel/arm_neon/average_sse2.c \
+							 src/core/kernel/arm_neon/generic_sse2.cpp \
+							 src/core/kernel/arm_neon/merge_sse2.c \
+							 src/core/kernel/arm_neon/planestats_sse2.c \
+							 src/core/kernel/arm_neon/transpose_sse2.c
+endif # ARMASM
 
 pkginclude_HEADERS = include/VapourSynth.h \
 					 include/VapourSynth4.h \

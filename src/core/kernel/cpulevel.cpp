@@ -38,9 +38,13 @@ int vs_cpulevel_from_str(const char *name) {
         return VS_CPU_LEVEL_SSE2;
     else if (!strcmp(name, "avx2"))
         return VS_CPU_LEVEL_AVX2;
-#endif
     else
         return VS_CPU_LEVEL_MAX;
+#endif
+#ifdef __ARM_NEON__
+    else return VS_CPU_LEVEL_NEON;
+#endif
+    return VS_CPU_LEVEL_MAX;
 }
 
 const char *vs_cpulevel_to_str(int level) {
@@ -51,7 +55,11 @@ const char *vs_cpulevel_to_str(int level) {
         return "sse2";
     else if (level <= VS_CPU_LEVEL_AVX2)
         return "avx2";
-#endif
     else
         return "";
+#endif
+#ifdef __ARM_NEON__
+    else return "neon";
+#endif
+    return "";
 }

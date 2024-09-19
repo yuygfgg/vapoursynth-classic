@@ -46,3 +46,10 @@ x64
 Debug
 Release
 msvc_project/.vs
+.DS_Store
+*/.DS_Store
+*.m4
+.vscode/*
+
+configure~
+src/core/kernel/average

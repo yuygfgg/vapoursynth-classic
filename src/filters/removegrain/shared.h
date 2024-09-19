@@ -22,8 +22,10 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 #include <stdint.h>
 #include <algorithm>
 #include <cstdlib>
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86)
 #include <emmintrin.h>
+#elif defined(__ARM_NEON__)
+#include "sse2neon.h"
 #endif
 
 using namespace vsh;
@@ -45,7 +47,7 @@ static __forceinline T limit(T x, T mi, T ma)
     return ((x < mi) ? mi : ((x > ma) ? ma : x));
 }
 
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
 static inline __m128i limit_epi16(const __m128i &x, const __m128i &mi, const __m128i &ma) {
     return (_mm_max_epi16(_mm_min_epi16(x, ma), mi));
 }
@@ -112,7 +114,7 @@ public:
     static inline bool skip_line(int y) { return ((y & 1) == 0); }
 };
 
-#ifdef VS_TARGET_CPU_X86
+#if defined(VS_TARGET_CPU_X86) || defined(__ARM_NEON__)
 static __forceinline void sort_pair(__m128i &a1, __m128i &a2)
 {
     const __m128i tmp = _mm_min_epi16(a1, a2);

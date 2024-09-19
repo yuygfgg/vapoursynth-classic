@@ -11,6 +11,8 @@ class FilterTestSequence(unittest.TestCase):
         self.core = vs.core
         self.Transpose = self.core.std.Transpose
         self.BlankClip = self.core.std.BlankClip
+        self.MakeFullDiff = self.core.std.MakeFullDiff
+        self.MergeFullDiff = self.core.std.MergeFullDiff
 		
     def test_transpose8_test(self):
         clip = self.BlankClip(format=vs.YUV420P8, color=[0, 0, 0], width=1156, height=752)

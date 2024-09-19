@@ -53,3 +53,4 @@ msvc_project/.vs
 
 configure~
 src/core/kernel/average
+vspipe

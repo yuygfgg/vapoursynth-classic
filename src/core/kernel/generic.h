@@ -163,6 +163,40 @@ DECL_3x3(conv, word, avx2)
 DECL_3x3(conv, float, avx2)
 #endif /* VS_TARGET_CPU_X86 */
 
+#ifdef __ARM_NEON__
+DECL_3x3(prewitt, byte, neon)
+DECL_3x3(prewitt, word, neon)
+DECL_3x3(prewitt, float, neon)
+
+DECL_3x3(sobel, byte, neon)
+DECL_3x3(sobel, word, neon)
+DECL_3x3(sobel, float, neon)
+
+DECL_3x3(min, byte, neon)
+DECL_3x3(min, word, neon)
+DECL_3x3(min, float, neon)
+
+DECL_3x3(max, byte, neon)
+DECL_3x3(max, word, neon)
+DECL_3x3(max, float, neon)
+
+DECL_3x3(median, byte, neon)
+DECL_3x3(median, word, neon)
+DECL_3x3(median, float, neon)
+
+DECL_3x3(deflate, byte, neon)
+DECL_3x3(deflate, word, neon)
+DECL_3x3(deflate, float, neon)
+
+DECL_3x3(inflate, byte, neon)
+DECL_3x3(inflate, word, neon)
+DECL_3x3(inflate, float, neon)
+
+DECL_3x3(conv, byte, neon)
+DECL_3x3(conv, word, neon)
+DECL_3x3(conv, float, neon)
+#endif /* __ARM_NEON__ */
+
 #undef DECL_3x3
 #undef DECL
 

@@ -66,7 +66,7 @@ void vs_premultiply_byte_c(const void *src1, const void *src2, void *dst, unsign
     unsigned i;
 
     (void)depth;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint8_t v1 = srcp1[i];
         uint8_t v2 = srcp2[i];
@@ -80,7 +80,7 @@ void vs_premultiply_word_c(const void *src1, const void *src2, void *dst, unsign
     const uint16_t *srcp2 = src2;
     uint16_t *dstp = dst;
     unsigned i;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint16_t v1 = srcp1[i];
         uint16_t v2 = srcp2[i];
@@ -97,7 +97,7 @@ void vs_premultiply_float_c(const void *src1, const void *src2, void *dst, unsig
 
     (void)depth;
     (void)offset;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         dstp[i] = srcp1[i] * srcp2[i];
     }
@@ -111,7 +111,7 @@ void vs_merge_byte_c(const void *src1, const void *src2, void *dst, union vs_mer
     uint8_t *dstp = dst;
     unsigned w = weight.u;
     unsigned i;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         unsigned v1 = srcp1[i];
         unsigned v2 = srcp2[i];
@@ -126,7 +126,7 @@ void vs_merge_word_c(const void *src1, const void *src2, void *dst, union vs_mer
     uint16_t *dstp = dst;
     unsigned w = weight.u;
     unsigned i;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         unsigned v1 = srcp1[i];
         unsigned v2 = srcp2[i];
@@ -141,7 +141,7 @@ void vs_merge_float_c(const void *src1, const void *src2, void *dst, union vs_me
     float *dstp = dst;
     float w = weight.f;
     unsigned i;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         float v1 = srcp1[i];
         float v2 = srcp2[i];
@@ -160,7 +160,7 @@ void vs_mask_merge_byte_c(const void *src1, const void *src2, const void *mask, 
 
     (void)offset;
     (void)depth;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint8_t v1 = srcp1[i];
         uint8_t v2 = srcp2[i];
@@ -184,7 +184,7 @@ void vs_mask_merge_word_c(const void *src1, const void *src2, const void *mask, 
     uint8_t shift = shift_table[depth - 9];
 
     (void)offset;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint16_t v1 = srcp1[i];
         uint16_t v2 = srcp2[i];
@@ -205,7 +205,7 @@ void vs_mask_merge_float_c(const void *src1, const void *src2, const void *mask,
 
     (void)depth;
     (void)offset;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         float v1 = srcp1[i];
         float v2 = srcp2[i];
@@ -222,7 +222,7 @@ void vs_mask_merge_premul_byte_c(const void *src1, const void *src2, const void 
     unsigned i;
 
     (void)depth;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint8_t v1 = srcp1[i];
         uint8_t v2 = srcp2[i];
@@ -242,7 +242,7 @@ void vs_mask_merge_premul_word_c(const void *src1, const void *src2, const void 
     unsigned i;
 
     uint16_t maxval = (1U << depth) - 1;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint16_t v1 = srcp1[i];
         uint16_t v2 = srcp2[i];
@@ -263,7 +263,7 @@ void vs_mask_merge_premul_float_c(const void *src1, const void *src2, const void
 
     (void)depth;
     (void)offset;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         float v1 = srcp1[i];
         float v2 = srcp2[i];
@@ -279,7 +279,7 @@ void vs_makediff_byte_c(const void *src1, const void *src2, void *dst, unsigned 
     unsigned i;
 
     (void)depth;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint8_t v1 = srcp1[i];
         uint8_t v2 = srcp2[i];
@@ -296,7 +296,7 @@ void vs_makediff_word_c(const void *src1, const void *src2, void *dst, unsigned 
 
     int32_t half = 1U << (depth - 1);
     int32_t maxval = (1U << depth) - 1;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint16_t v1 = srcp1[i];
         uint16_t v2 = srcp2[i];
@@ -313,7 +313,7 @@ void vs_makediff_float_c(const void *src1, const void *src2, void *dst, unsigned
     unsigned i;
 
     (void)depth;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         dstp[i] = srcp1[i] - srcp2[i];
     }
@@ -337,6 +337,7 @@ void vs_makefulldiff_word_word_c(const void *src1, const void *src2, void *dst, 
     uint16_t *dstp = dst;
     unsigned i;
     uint16_t half = 1U << depth;
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint16_t v1 = srcp1[i];
         uint16_t v2 = srcp2[i];
@@ -349,6 +350,7 @@ void vs_makefulldiff_word_dword_c(const void *src1, const void *src2, void *dst,
     uint32_t *dstp = dst;
     unsigned i;
     int32_t half = 1U << depth;
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint16_t v1 = srcp1[i];
         uint16_t v2 = srcp2[i];
@@ -364,7 +366,7 @@ void vs_mergediff_byte_c(const void *src1, const void *src2, void *dst, unsigned
     unsigned i;
 
     (void)depth;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint8_t v1 = srcp1[i];
         uint8_t v2 = srcp2[i];
@@ -381,7 +383,7 @@ void vs_mergediff_word_c(const void *src1, const void *src2, void *dst, unsigned
 
     int32_t half = 1U << (depth - 1);
     int32_t maxval = (1U << depth) - 1;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint16_t v1 = srcp1[i];
         uint16_t v2 = srcp2[i];
@@ -398,7 +400,7 @@ void vs_mergediff_float_c(const void *src1, const void *src2, void *dst, unsigne
     unsigned i;
 
     (void)depth;
-
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         dstp[i] = srcp1[i] + srcp2[i];
     }
@@ -410,6 +412,7 @@ void vs_mergefulldiff_word_byte_c(const void *src1, const void *src2, void *dst,
     uint8_t *dstp = dst;
     unsigned i;
     (void)depth;
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint8_t v1 = srcp1[i];
         uint16_t v2 = srcp2[i];
@@ -423,6 +426,7 @@ void vs_mergefulldiff_word_word_c(const void *src1, const void *src2, void *dst,
     unsigned i;
     int32_t half = 1U << depth;
     int32_t maxval = (1U << depth) - 1;
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint16_t v1 = srcp1[i];
         uint16_t v2 = srcp2[i];
@@ -437,6 +441,7 @@ void vs_mergefulldiff_dword_word_c(const void *src1, const void *src2, void *dst
     unsigned i;
     int32_t half = 1U << depth;
     int32_t maxval = (1U << depth) - 1;
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint16_t v1 = srcp1[i];
         uint32_t v2 = srcp2[i];

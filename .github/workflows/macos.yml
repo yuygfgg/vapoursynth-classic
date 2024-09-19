@@ -19,7 +19,7 @@ jobs:
     - name: Install autotools
       run: |
         brew update
-        brew install automake autoconf libtool pkg-config
+        brew install automake autoconf libtool pkg-config llvm
 
     - name: Install zimg
       run: |
@@ -48,8 +48,9 @@ jobs:
 
     - name: configure
       run: |
+        export CC=/opt/homebrew/opt/llvm/bin/clang
+        export CXX=/opt/homebrew/opt/llvm/bin/clang++
         ./autogen.sh
-        # somehow newer macOS imagemagick requires -fopenmp to build?
         ./configure --disable-imwri
 
     - name: make

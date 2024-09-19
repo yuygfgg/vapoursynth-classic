@@ -24,6 +24,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <omp.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -15,10 +15,10 @@ jobs:
         test: [true]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
 
     - name: Clone Dependencies
       shell: bash
@@ -161,7 +161,7 @@ jobs:
         done
 
     - name: Upload release artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-${{ matrix.arch }}-py${{ matrix.python-version }}
         if-no-files-found: error
@@ -173,7 +173,7 @@ jobs:
     needs: build-msvc
     steps:
     - name: Download all build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: release
         
@@ -191,13 +191,8 @@ jobs:
         }'
         popd
         
-    - name: Compress all releases
-      shell: bash
-      run: |
-        tar -czvf full_release.tar.gz -C release .
-        
     - name: Upload final release artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-       name: full_release
-       path: full_release.tar.gz
+       name: release
+       path: release

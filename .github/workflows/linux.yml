@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install GCC 11
       if: ${{ matrix.cc == 'gcc-11' }}
@@ -43,7 +43,7 @@ jobs:
         rm -rf zimg
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         # Version range or exact version of a Python version to use, using SemVer's version range syntax.
         python-version: 3.9

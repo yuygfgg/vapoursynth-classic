@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -40,7 +41,7 @@ using namespace vsh;
 
 namespace {
 
-std::string operator""_s(const char *str, size_t len) { return{ str, len }; }
+using namespace std::string_literals;
 
 const std::unordered_map<std::string, zimg_cpu_type_e> g_cpu_type_table{
     { "none",      ZIMG_CPU_NONE },
@@ -80,30 +81,30 @@ const std::unordered_map<std::string, zimg_chroma_location_e> g_chromaloc_table{
 
 const std::unordered_map<std::string, zimg_matrix_coefficients_e> g_matrix_table{
     { "rgb",         ZIMG_MATRIX_RGB },
-    { "709",         ZIMG_MATRIX_709 },
+    { "709",         ZIMG_MATRIX_BT709 },
     { "unspec",      ZIMG_MATRIX_UNSPECIFIED },
-    { "170m",        ZIMG_MATRIX_170M },
-    { "240m",        ZIMG_MATRIX_240M },
-    { "470bg",       ZIMG_MATRIX_470BG },
+    { "170m",        ZIMG_MATRIX_ST170_M },
+    { "240m",        ZIMG_MATRIX_ST240_M },
+    { "470bg",       ZIMG_MATRIX_BT470_BG },
     { "fcc",         ZIMG_MATRIX_FCC },
     { "ycgco",       ZIMG_MATRIX_YCGCO },
-    { "2020ncl",     ZIMG_MATRIX_2020_NCL },
-    { "2020cl",      ZIMG_MATRIX_2020_CL },
+    { "2020ncl",     ZIMG_MATRIX_BT2020_NCL },
+    { "2020cl",      ZIMG_MATRIX_BT2020_CL },
     { "chromacl",    ZIMG_MATRIX_CHROMATICITY_DERIVED_CL },
     { "chromancl",   ZIMG_MATRIX_CHROMATICITY_DERIVED_NCL },
     { "ictcp",       ZIMG_MATRIX_ICTCP },
 };
 
 const std::unordered_map<std::string, zimg_transfer_characteristics_e> g_transfer_table{
-    { "709",     ZIMG_TRANSFER_709 },
+    { "709",     ZIMG_TRANSFER_BT709 },
     { "unspec",  ZIMG_TRANSFER_UNSPECIFIED },
-    { "601",     ZIMG_TRANSFER_601 },
+    { "601",     ZIMG_TRANSFER_BT601 },
     { "linear",  ZIMG_TRANSFER_LINEAR },
-    { "2020_10", ZIMG_TRANSFER_2020_10 },
-    { "2020_12", ZIMG_TRANSFER_2020_12 },
-    { "240m",    ZIMG_TRANSFER_240M },
-    { "470m",    ZIMG_TRANSFER_470_M },
-    { "470bg",   ZIMG_TRANSFER_470_BG },
+    { "2020_10", ZIMG_TRANSFER_BT2020_10 },
+    { "2020_12", ZIMG_TRANSFER_BT2020_12 },
+    { "240m",    ZIMG_TRANSFER_ST240_M },
+    { "470m",    ZIMG_TRANSFER_BT470_M },
+    { "470bg",   ZIMG_TRANSFER_BT470_BG },
     { "log100",  ZIMG_TRANSFER_LOG_100 },
     { "log316",  ZIMG_TRANSFER_LOG_316 },
     { "st2084",  ZIMG_TRANSFER_ST2084 },
@@ -114,14 +115,14 @@ const std::unordered_map<std::string, zimg_transfer_characteristics_e> g_transfe
 };
 
 const std::unordered_map<std::string, zimg_color_primaries_e> g_primaries_table{
-    { "709",       ZIMG_PRIMARIES_709 },
+    { "709",       ZIMG_PRIMARIES_BT709 },
     { "unspec",    ZIMG_PRIMARIES_UNSPECIFIED },
-    { "170m",      ZIMG_PRIMARIES_170M },
-    { "240m",      ZIMG_PRIMARIES_240M },
-    { "470m",      ZIMG_PRIMARIES_470_M },
-    { "470bg",     ZIMG_PRIMARIES_470_BG },
+    { "170m",      ZIMG_PRIMARIES_ST170_M },
+    { "240m",      ZIMG_PRIMARIES_ST240_M },
+    { "470m",      ZIMG_PRIMARIES_BT470_M },
+    { "470bg",     ZIMG_PRIMARIES_BT470_BG },
     { "film",      ZIMG_PRIMARIES_FILM },
-    { "2020",      ZIMG_PRIMARIES_2020 },
+    { "2020",      ZIMG_PRIMARIES_BT2020 },
     { "st428",     ZIMG_PRIMARIES_ST428 },
     { "xyz",       ZIMG_PRIMARIES_ST428 },
     { "st431-2",   ZIMG_PRIMARIES_ST431_2 },
@@ -150,7 +151,7 @@ const std::unordered_map<std::string, zimg_resample_filter_e> g_resample_filter_
 template <class T, class U>
 T range_check_integer(U x, const char *key) {
     if (x < std::numeric_limits<T>::min() || x > std::numeric_limits<T>::max())
-        throw std::range_error{ "value for key \""_s + key + "\" out of range" };
+        throw std::range_error{ "value for key \""s + key + "\" out of range" };
     return static_cast<T>(x);
 }
 
@@ -209,7 +210,7 @@ void translate_pixel_type(const VSVideoFormat *format, zimg_pixel_type_e *out, c
     else {
         char buffer[32];
         vsapi->getVideoFormatName(format, buffer);
-        throw std::runtime_error{ "no matching pixel type for format: "_s + buffer };
+        throw std::runtime_error{ "no matching pixel type for format: "s + buffer };
     }
 }
 
@@ -421,39 +422,36 @@ bool is_shifted(const zimg_image_format &fmt) {
 }
 
 
-void VS_CC vszimg_free(void *instanceData, VSCore *core, const VSAPI *vsapi);
-const VSFrame * VS_CC vszimg_get_frame(int n, int activationReason, void *instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi);
+enum class FieldOp {
+    NONE,
+    DEINTERLACE,
+};
+
+
+struct vszimg_userdata {
+    zimg_resample_filter_e filter;
+    FieldOp op;
+
+    explicit vszimg_userdata(void *encoded) :
+        filter{ static_cast<zimg_resample_filter_e>(reinterpret_cast<intptr_t>(encoded) & 0x3FFF) },
+        op{ static_cast<FieldOp>(reinterpret_cast<intptr_t>(encoded) >> 14) }
+    {}
+
+    vszimg_userdata(zimg_resample_filter_e filter, FieldOp op = FieldOp::NONE) : filter{ filter }, op{ op } {}
+
+    void *encode() const { return reinterpret_cast<void *>((static_cast<intptr_t>(filter) & 0x3FFF) | (static_cast<intptr_t>(op) << 14)); }
+
+    operator void *() const { return encode(); }
+};
+
 
 class vszimg {
-    template <class T>
-    class optional_of {
-        T m_value;
-        bool m_is_present;
-    public:
-        optional_of() : m_value{}, m_is_present{ false } {}
-
-        optional_of(const T &x) : m_value{ x }, m_is_present{ true } {}
-
-        optional_of &operator=(const T &v) {
-            m_value = v;
-            m_is_present = true;
-            return *this;
-        }
-
-        const T &get() const {
-            assert(is_present());
-            return m_value;
-        }
-
-        bool is_present() const { return m_is_present; }
-    };
-
     struct frame_params {
-        optional_of<zimg_matrix_coefficients_e> matrix;
-        optional_of<zimg_transfer_characteristics_e> transfer;
-        optional_of<zimg_color_primaries_e> primaries;
-        optional_of<zimg_pixel_range_e> range;
-        optional_of<zimg_chroma_location_e> chromaloc;
+        std::optional<zimg_matrix_coefficients_e> matrix;
+        std::optional<zimg_transfer_characteristics_e> transfer;
+        std::optional<zimg_color_primaries_e> primaries;
+        std::optional<zimg_pixel_range_e> range;
+        std::optional<zimg_chroma_location_e> chromaloc;
     };
 
     struct graph_data {
@@ -471,29 +469,31 @@ class vszimg {
     std::shared_ptr<graph_data> m_graph_data_t;
     std::shared_ptr<graph_data> m_graph_data_b;
 
-    VSNode *m_node;
-    VSVideoInfo m_vi;
-    bool m_prefer_props; // If true, frame properties have precedence over filter arguments.
-    double m_src_left, m_src_top, m_src_width, m_src_height;
+    VSNode *m_node = nullptr;
+    VSVideoInfo m_vi{};
+
     vszimgxx::zfilter_graph_builder_params m_params;
+    double m_src_left = NAN, m_src_top = NAN, m_src_width = NAN, m_src_height = NAN; // Propagated to zimage_format.
 
     frame_params m_frame_params;
     frame_params m_frame_params_in;
 
+    FieldOp m_field_op = FieldOp::NONE;
+
     template <class T, class Map>
-    static void lookup_enum_str(const VSMap *map, const char *key, const Map &enum_table, optional_of<T> *out, const VSAPI *vsapi) {
+    static void lookup_enum_str(const VSMap *map, const char *key, const Map &enum_table, std::optional<T> *out, const VSAPI *vsapi) {
         if (vsapi->mapNumElements(map, key) > 0) {
             const char *enum_str = propGetScalar<const char *>(map, key, vsapi);
             auto it = enum_table.find(enum_str);
             if (it != enum_table.end())
                 *out = it->second;
             else
-                throw std::runtime_error{ "bad value: "_s + key };
+                throw std::runtime_error{ "bad value: "s + key };
         }
     }
 
     template <class T, class Map>
-    static void lookup_enum(const VSMap *map, const char *key, const Map &enum_table, optional_of<T> *out, const VSAPI *vsapi) {
+    static void lookup_enum(const VSMap *map, const char *key, const Map &enum_table, std::optional<T> *out, const VSAPI *vsapi) {
         if (vsapi->mapNumElements(map, key) > 0) {
             *out = static_cast<T>(propGetScalar<int>(map, key, vsapi));
         } else {
@@ -504,28 +504,24 @@ class vszimg {
 
     template <class T, class Map>
     static bool lookup_enum_str_opt(const VSMap *map, const char *key, const Map &enum_table, T *out, const VSAPI *vsapi) {
-        optional_of<T> opt;
+        std::optional<T> opt;
         lookup_enum_str(map, key, enum_table, &opt, vsapi);
-        if (opt.is_present())
-            *out = opt.get();
-        return opt.is_present();
+        if (opt.has_value())
+            *out = opt.value();
+        return opt.has_value();
     }
 
     template <class T>
-    static void propagate_if_present(const optional_of<T> &in, T *out) {
-        if (in.is_present())
-            *out = in.get();
+    static void propagate_if_present(const std::optional<T> &in, T *out) {
+        if (in.has_value())
+            *out = in.value();
     }
 
-    vszimg(const VSMap *in, void *userData, VSCore *core, const VSAPI *vsapi) :
-        m_node{ nullptr },
-        m_vi(),
-        m_prefer_props(false),
-        m_src_left(),
-        m_src_top(),
-        m_src_width(),
-        m_src_height()
+    vszimg(const VSMap *in, void *userData, VSCore *core, const VSAPI *vsapi)
     {
+        vszimg_userdata u{ userData };
+        m_field_op = u.op;
+
         try {
             m_node = vsapi->mapGetNode(in, "clip", 0, nullptr);
             const VSVideoInfo &node_vi = *vsapi->getVideoInfo(m_node);
@@ -535,11 +531,14 @@ class vszimg {
             m_vi.width = propGetScalarDef<unsigned>(in, "width", node_vi.width, vsapi);
             m_vi.height = propGetScalarDef<unsigned>(in, "height", node_vi.height, vsapi);
 
-            int format_id = propGetScalarDef<int>(in, "format", 0, vsapi);
-            if (format_id == 0) {
-                m_vi.format = node_vi.format;
+            if (m_field_op == FieldOp::DEINTERLACE)
+                m_vi.height = node_vi.height * 2;
+
+            if (int format_id = propGetScalarDef<int>(in, "format", 0, vsapi)) {
+                if (!vsapi->getVideoFormatByID(&m_vi.format, format_id, core) || m_vi.format.colorFamily == cfUndefined)
+                    throw std::runtime_error{ "Invalid format id." };
             } else {
-                vsapi->getVideoFormatByID(&m_vi.format, format_id, core);
+                m_vi.format = node_vi.format;
             }
 
             lookup_enum(in, "matrix", g_matrix_table, &m_frame_params.matrix, vsapi);
@@ -556,7 +555,7 @@ class vszimg {
 
             m_params.cpu_type = ZIMG_CPU_AUTO_64B;
             m_params.allow_approximate_gamma = propGetScalarDef<int>(in, "approximate_gamma", 1, vsapi);
-            m_params.resample_filter = static_cast<zimg_resample_filter_e>(reinterpret_cast<intptr_t>(userData));
+            m_params.resample_filter = u.filter;
             m_params.filter_param_a = propGetScalarDef<double>(in, "filter_param_a", m_params.filter_param_a, vsapi);
             m_params.filter_param_b = propGetScalarDef<double>(in, "filter_param_b", m_params.filter_param_b, vsapi);
 
@@ -571,7 +570,6 @@ class vszimg {
 
             lookup_enum_str_opt(in, "dither_type", g_dither_type_table, &m_params.dither_type, vsapi);
             lookup_enum_str_opt(in, "cpu_type", g_cpu_type_table, &m_params.cpu_type, vsapi);
-            m_prefer_props = !!propGetScalarDef<int>(in, "prefer_props", 0, vsapi);
 
             m_src_left = propGetScalarDef<double>(in, "src_left", NAN, vsapi);
             m_src_top = propGetScalarDef<double>(in, "src_top", NAN, vsapi);
@@ -595,12 +593,12 @@ class vszimg {
                     && dst_format.matrix_coefficients == ZIMG_MATRIX_UNSPECIFIED
                     && src_format.color_family != ZIMG_COLOR_YUV
                     && src_format.color_family != ZIMG_COLOR_GREY
-                    && !m_frame_params.matrix.is_present()) {
+                    && !m_frame_params.matrix.has_value()) {
                     throw std::runtime_error{ "Matrix must be specified when converting to YUV or GRAY from RGB" };
                 }
             }
         } catch (...) {
-            freeFunc(core, vsapi);
+            freeResources(core, vsapi);
             throw;
         }
     }
@@ -624,17 +622,23 @@ class vszimg {
         return data;
     }
 
-    void set_src_colorspace(zimg_image_format *src_format) {
-        propagate_if_present(m_frame_params_in.matrix, &src_format->matrix_coefficients);
-        propagate_if_present(m_frame_params_in.transfer, &src_format->transfer_characteristics);
-        propagate_if_present(m_frame_params_in.primaries, &src_format->color_primaries);
-        propagate_if_present(m_frame_params_in.range, &src_format->pixel_range);
-        propagate_if_present(m_frame_params_in.chromaloc, &src_format->chroma_location);
+    void set_frame_params(const frame_params &params, zimg_image_format *format) {
+        propagate_if_present(params.matrix, &format->matrix_coefficients);
+        propagate_if_present(params.transfer, &format->transfer_characteristics);
+        propagate_if_present(params.primaries, &format->color_primaries);
+        propagate_if_present(params.range, &format->pixel_range);
+        propagate_if_present(params.chromaloc, &format->chroma_location);
+    }
+
+    void set_src_colorspace(const VSMap *props, zimg_image_format *src_format, bool *interlaced, const VSAPI *vsapi) {
+        // Frame properties take precedence over defaults.
+        set_frame_params(m_frame_params_in, src_format);
+        import_frame_props(props, src_format, interlaced, vsapi);
     }
 
     void set_dst_colorspace(const zimg_image_format &src_format, zimg_image_format *dst_format) {
         // Avoid copying matrix coefficients when restricted by color family.
-        if (dst_format->matrix_coefficients != ZIMG_MATRIX_RGB && dst_format->matrix_coefficients != ZIMG_MATRIX_YCGCO)
+        if (dst_format->matrix_coefficients != ZIMG_MATRIX_RGB)
             dst_format->matrix_coefficients = src_format.matrix_coefficients;
 
         dst_format->transfer_characteristics = src_format.transfer_characteristics;
@@ -653,12 +657,7 @@ class vszimg {
         }
 
         dst_format->field_parity = src_format.field_parity;
-
-        propagate_if_present(m_frame_params.matrix, &dst_format->matrix_coefficients);
-        propagate_if_present(m_frame_params.transfer, &dst_format->transfer_characteristics);
-        propagate_if_present(m_frame_params.primaries, &dst_format->color_primaries);
-        propagate_if_present(m_frame_params.range, &dst_format->pixel_range);
-        propagate_if_present(m_frame_params.chromaloc, &dst_format->chroma_location);
+        set_frame_params(m_frame_params, dst_format);
     }
 
     const VSFrame *real_get_frame(const VSFrame *src_frame, VSCore *core, const VSAPI *vsapi) {
@@ -685,15 +684,17 @@ class vszimg {
 
             bool interlaced = false;
 
-            if (m_prefer_props) {
-                set_src_colorspace(&src_format);
-                import_frame_props(src_props, &src_format, &interlaced, vsapi);
-            } else {
-                import_frame_props(src_props, &src_format, &interlaced, vsapi);
-                set_src_colorspace(&src_format);
-            }
-
+            set_frame_params(m_frame_params_in, &src_format);
+            import_frame_props(src_props, &src_format, &interlaced, vsapi);
             set_dst_colorspace(src_format, &dst_format);
+
+            if (m_field_op == FieldOp::DEINTERLACE) {
+                if (interlaced || src_format.field_parity == ZIMG_FIELD_PROGRESSIVE)
+                    vsapi->logMessage(mtFatal, "expected _Field when bobbing", core);
+
+                dst_format.height = src_format.height * 2;
+                dst_format.field_parity = ZIMG_FIELD_PROGRESSIVE;
+            }
 
             if (src_format == dst_format && isSameVideoFormat(src_vsformat, dst_vsformat) && !is_shifted(src_format)) {
                 VSFrame *clone = vsapi->copyFrame(src_frame, core);
@@ -720,9 +721,9 @@ class vszimg {
                 dst_format_b.field_parity = ZIMG_FIELD_BOTTOM;
                 std::shared_ptr<graph_data> graph_b = get_graph_data(src_format_b, dst_format_b);
 
-                std::unique_ptr<void, decltype(&internal_aligned_free)> tmp{
-                    internal_aligned_malloc<void>(std::max(graph_t->graph.get_tmp_size(), graph_b->graph.get_tmp_size()), 64),
-                    internal_aligned_free
+                std::unique_ptr<void, decltype(&vsh_aligned_free)> tmp{
+                    vsh_aligned_malloc(std::max(graph_t->graph.get_tmp_size(), graph_b->graph.get_tmp_size()), 64),
+                    vsh_aligned_free
                 };
                 if (!tmp)
                     throw std::bad_alloc{};
@@ -740,9 +741,9 @@ class vszimg {
             } else {
                 std::shared_ptr<graph_data> graph = get_graph_data(src_format, dst_format);
 
-                std::unique_ptr<void, decltype(&internal_aligned_free)> tmp{
-                    internal_aligned_malloc<void>(graph->graph.get_tmp_size(), 64),
-                    internal_aligned_free
+                std::unique_ptr<void, decltype(&vsh_aligned_free)> tmp{
+                    vsh_aligned_malloc(graph->graph.get_tmp_size(), 64),
+                    vsh_aligned_free
                 };
                 if (!tmp)
                     throw std::bad_alloc{};
@@ -780,7 +781,7 @@ public:
         assert(!m_node);
     }
 
-    void freeFunc(VSCore *core, const VSAPI *vsapi) {
+    void freeResources(VSCore *core, const VSAPI *vsapi) {
         vsapi->freeNode(m_node);
         m_node = nullptr;
     }
@@ -800,63 +801,89 @@ public:
             std::string errmsg = "Resize error " + std::to_string(e.code) + ": " + e.msg;
             vsapi->setFilterError(errmsg.c_str(), frameCtx);
         } catch (const std::exception &e) {
-            vsapi->setFilterError(("Resize error: "_s + e.what()).c_str(), frameCtx);
+            vsapi->setFilterError(("Resize error: "s + e.what()).c_str(), frameCtx);
         }
 
         vsapi->freeFrame(src_frame);
         return ret;
     }
 
-    static void create(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
+    static void VS_CC create(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
         try {
             vszimg *x = new vszimg{ in, userData, core, vsapi };
-            const char *resizeType = "UnknownResize";
-            switch (reinterpret_cast<uintptr_t>(userData)) {
-                case ZIMG_RESIZE_POINT:
-                    resizeType = "Point";
-                    break;
-                case ZIMG_RESIZE_BILINEAR:
-                    resizeType = "Bilinear";
-                    break;
-                case ZIMG_RESIZE_BICUBIC:
-                    resizeType = "Bicubic";
-                    break;
-                case ZIMG_RESIZE_SPLINE16:
-                    resizeType = "Spline16";
-                    break;
-                case ZIMG_RESIZE_SPLINE36:
-                    resizeType = "Spline36";
-                    break;
-                case ZIMG_RESIZE_SPLINE64:
-                    resizeType = "Spline64";
-                    break;
-                case ZIMG_RESIZE_LANCZOS:
-                    resizeType = "Lanczos";
-                    break;
+            vszimg_userdata u{ userData };
+            const char *name = "";
+
+            if (u.op == FieldOp::DEINTERLACE) {
+                name = "Bob";
+            } else {
+                switch (u.filter) {
+                case ZIMG_RESIZE_POINT: name = "Point"; break;
+                case ZIMG_RESIZE_BILINEAR: name = "Bilinear"; break;
+                case ZIMG_RESIZE_BICUBIC: name = "Bicubic"; break;
+                case ZIMG_RESIZE_SPLINE16: name = "Spline16"; break;
+                case ZIMG_RESIZE_SPLINE36: name = "Spline36"; break;
+                case ZIMG_RESIZE_SPLINE64: name = "Spline64"; break;
+                case ZIMG_RESIZE_LANCZOS: name = "Lanczos"; break;
+                }
             }
+
             VSFilterDependency deps[] = {{x->m_node, rpStrictSpatial}};
-            vsapi->createVideoFilter(out, resizeType, &x->m_vi, &vszimg_get_frame, vszimg_free, fmParallel, deps, 1, x, core);
+            vsapi->createVideoFilter(out, name, &x->m_vi, &vszimg::static_get_frame, &vszimg::free, fmParallel, deps, 1, x, core);
         } catch (const vszimgxx::zerror &e) {
             std::string errmsg = "Resize error " + std::to_string(e.code) + ": " + e.msg;
             vsapi->mapSetError(out, errmsg.c_str());
         } catch (const std::exception &e) {
-            vsapi->mapSetError(out, ("Resize error: "_s + e.what()).c_str());
+            vsapi->mapSetError(out, ("Resize error: "s + e.what()).c_str());
         }
+    }
+
+    static void VS_CC free(void *instanceData, VSCore *core, const VSAPI *vsapi) {
+        vszimg *ptr = static_cast<vszimg *>(instanceData);
+        ptr->freeResources(core, vsapi);
+        delete ptr;
+    }
+
+    static const VSFrame * VS_CC static_get_frame(int n, int activationReason, void *instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
+        return static_cast<vszimg *>(instanceData)->get_frame(n, activationReason, frameData, frameCtx, core, vsapi);
     }
 };
 
-void VS_CC vszimg_create(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) {
-    vszimg::create(in, out, userData, core, vsapi);
-}
 
-void VS_CC vszimg_free(void *instanceData, VSCore *core, const VSAPI *vsapi) {
-    vszimg *x = static_cast<vszimg *>(instanceData);
-    x->freeFunc(core, vsapi);
-    delete x;
-}
+void VS_CC bobCreate(const VSMap *in, VSMap *out, void *userData, VSCore *core, const VSAPI *vsapi) noexcept {
+    vszimg_userdata u{ userData };
+    u.op = FieldOp::DEINTERLACE;
 
-const VSFrame * VS_CC vszimg_get_frame(int n, int activationReason, void *instanceData, void **frameData, VSFrameContext *frameCtx, VSCore *core, const VSAPI *vsapi) {
-    return static_cast<vszimg *>(instanceData)->get_frame(n, activationReason, frameData, frameCtx, core, vsapi);
+    VSPlugin *stdplugin = vsapi->getPluginByNamespace("std", core);
+    VSMap *tmp_map = nullptr;
+    VSMap *sep_fields = nullptr;
+    int _;
+
+    if (const char *filterName = vsapi->mapGetData(in, "filter", 0, &_)) {
+        auto it = g_resample_filter_table.find(filterName);
+
+        if (it != g_resample_filter_table.end())
+            u.filter = it->second;
+    }
+
+    tmp_map = vsapi->createMap();
+    vsapi->mapConsumeNode(tmp_map, "clip", vsapi->mapGetNode(in, "clip", 0, nullptr), maReplace);
+    if (vsapi->mapNumElements(in, "tff") > 0)
+        vsapi->mapSetInt(tmp_map, "tff", vsapi->mapGetInt(in, "tff", 0, nullptr), maReplace);
+    sep_fields = vsapi->invoke(stdplugin, "SeparateFields", tmp_map);
+    if (const char *err = vsapi->mapGetError(sep_fields)) {
+        vsapi->mapSetError(out, err);
+        goto fail;
+    }
+
+    vsapi->copyMap(in, tmp_map);
+    vsapi->mapDeleteKey(tmp_map, "filter");
+    vsapi->mapDeleteKey(tmp_map, "tff");
+    vsapi->mapConsumeNode(tmp_map, "clip", vsapi->mapGetNode(sep_fields, "clip", 0, nullptr), maReplace);
+    vszimg::create(tmp_map, out, u, core, vsapi);
+fail:
+    vsapi->freeMap(tmp_map);
+    vsapi->freeMap(sep_fields);
 }
 
 } // namespace
@@ -867,48 +894,55 @@ void resizeInitialize(VSPlugin *plugin, const VSPLUGINAPI *vspapi) {
 #define FLOAT_OPT(x) #x ":float:opt;"
 #define DATA_OPT(x) #x ":data:opt;"
 #define ENUM_OPT(x) INT_OPT(x) DATA_OPT(x ## _s)
-    static const char FORMAT_DEFINITION[] =
+
+#define COMMON_ARGS \
+  INT_OPT(format) \
+  ENUM_OPT(matrix) \
+  ENUM_OPT(transfer) \
+  ENUM_OPT(primaries) \
+  ENUM_OPT(range) \
+  ENUM_OPT(chromaloc) \
+  ENUM_OPT(matrix_in) \
+  ENUM_OPT(transfer_in) \
+  ENUM_OPT(primaries_in) \
+  ENUM_OPT(range_in) \
+  ENUM_OPT(chromaloc_in) \
+  FLOAT_OPT(filter_param_a) \
+  FLOAT_OPT(filter_param_b) \
+  DATA_OPT(resample_filter_uv) \
+  FLOAT_OPT(filter_param_a_uv) \
+  FLOAT_OPT(filter_param_b_uv) \
+  DATA_OPT(dither_type) \
+  DATA_OPT(cpu_type) \
+  INT_OPT(prefer_props) \
+  FLOAT_OPT(src_left) \
+  FLOAT_OPT(src_top) \
+  FLOAT_OPT(src_width) \
+  FLOAT_OPT(src_height) \
+  FLOAT_OPT(nominal_luminance) \
+  INT_OPT(approximate_gamma)
+
+    static const char RESAMPLE_ARGS[] =
         "clip:vnode;"
         INT_OPT(width)
         INT_OPT(height)
-        INT_OPT(format)
-        ENUM_OPT(matrix)
-        ENUM_OPT(transfer)
-        ENUM_OPT(primaries)
-        ENUM_OPT(range)
-        ENUM_OPT(chromaloc)
-        ENUM_OPT(matrix_in)
-        ENUM_OPT(transfer_in)
-        ENUM_OPT(primaries_in)
-        ENUM_OPT(range_in)
-        ENUM_OPT(chromaloc_in)
-        FLOAT_OPT(filter_param_a)
-        FLOAT_OPT(filter_param_b)
-        DATA_OPT(resample_filter_uv)
-        FLOAT_OPT(filter_param_a_uv)
-        FLOAT_OPT(filter_param_b_uv)
-        DATA_OPT(dither_type)
-        DATA_OPT(cpu_type)
-        INT_OPT(prefer_props)
-        FLOAT_OPT(src_left)
-        FLOAT_OPT(src_top)
-        FLOAT_OPT(src_width)
-        FLOAT_OPT(src_height)
-        FLOAT_OPT(nominal_luminance)
-        INT_OPT(approximate_gamma);
+        COMMON_ARGS;
+
+    static const char RETURN_VALUE[] = "clip:vnode;";
+
+    vspapi->configPlugin(VSH_RESIZE_PLUGIN_ID, "resize", "VapourSynth Resize", VAPOURSYNTH_INTERNAL_PLUGIN_VERSION, VAPOURSYNTH_API_VERSION, 0, plugin);
+    vspapi->registerFunction("Bilinear", RESAMPLE_ARGS, RETURN_VALUE, &vszimg::create, vszimg_userdata(ZIMG_RESIZE_BILINEAR), plugin);
+    vspapi->registerFunction("Bicubic", RESAMPLE_ARGS, RETURN_VALUE, &vszimg::create, vszimg_userdata(ZIMG_RESIZE_BICUBIC), plugin);
+    vspapi->registerFunction("Point", RESAMPLE_ARGS, RETURN_VALUE, &vszimg::create, vszimg_userdata(ZIMG_RESIZE_POINT), plugin);
+    vspapi->registerFunction("Lanczos", RESAMPLE_ARGS, RETURN_VALUE, &vszimg::create, vszimg_userdata(ZIMG_RESIZE_LANCZOS), plugin);
+    vspapi->registerFunction("Spline16", RESAMPLE_ARGS, RETURN_VALUE, &vszimg::create, vszimg_userdata(ZIMG_RESIZE_SPLINE16), plugin);
+    vspapi->registerFunction("Spline36", RESAMPLE_ARGS, RETURN_VALUE, &vszimg::create, vszimg_userdata(ZIMG_RESIZE_SPLINE36), plugin);
+    vspapi->registerFunction("Spline64", RESAMPLE_ARGS, RETURN_VALUE, &vszimg::create, vszimg_userdata(ZIMG_RESIZE_SPLINE64), plugin);
+
+    vspapi->registerFunction("Bob", "clip:vnode;filter:data:opt;tff:int:opt;" COMMON_ARGS, RETURN_VALUE, bobCreate, vszimg_userdata(ZIMG_RESIZE_BICUBIC), plugin);
+#undef COMMON_ARGS
 #undef INT_OPT
 #undef FLOAT_OPT
 #undef DATA_OPT
 #undef ENUM_OPT
-
-    static const char RETURN_FORMAT_DEFINITION[] = "clip:vnode;";
-
-    vspapi->configPlugin(VSH_RESIZE_PLUGIN_ID, "resize", "VapourSynth Resize", VAPOURSYNTH_INTERNAL_PLUGIN_VERSION, VAPOURSYNTH_API_VERSION, 0, plugin);
-    vspapi->registerFunction("Bilinear", FORMAT_DEFINITION, RETURN_FORMAT_DEFINITION, vszimg_create, (void *)ZIMG_RESIZE_BILINEAR, plugin);
-    vspapi->registerFunction("Bicubic", FORMAT_DEFINITION, RETURN_FORMAT_DEFINITION, vszimg_create, (void *)ZIMG_RESIZE_BICUBIC, plugin);
-    vspapi->registerFunction("Point", FORMAT_DEFINITION, RETURN_FORMAT_DEFINITION, vszimg_create, (void *)ZIMG_RESIZE_POINT, plugin);
-    vspapi->registerFunction("Lanczos", FORMAT_DEFINITION, RETURN_FORMAT_DEFINITION, vszimg_create, (void *)ZIMG_RESIZE_LANCZOS, plugin);
-    vspapi->registerFunction("Spline16", FORMAT_DEFINITION, RETURN_FORMAT_DEFINITION, vszimg_create, (void *)ZIMG_RESIZE_SPLINE16, plugin);
-    vspapi->registerFunction("Spline36", FORMAT_DEFINITION, RETURN_FORMAT_DEFINITION, vszimg_create, (void *)ZIMG_RESIZE_SPLINE36, plugin);
-    vspapi->registerFunction("Spline64", FORMAT_DEFINITION, RETURN_FORMAT_DEFINITION, vszimg_create, (void *)ZIMG_RESIZE_SPLINE64, plugin);
 }

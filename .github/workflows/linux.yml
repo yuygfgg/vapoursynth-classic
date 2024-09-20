@@ -62,7 +62,25 @@ jobs:
         ./configure --prefix=/usr
 
     - name: make
-      run: make -j2
+      run: | 
+        make -j2
+        cp -r .libs libs
+    
+    - name: Upload libs
+      if: ${{ matrix.cc == 'gcc-11' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: libs
+        if-no-files-found: error
+        path: libs/
+    
+    - name: Upload includes
+      if: ${{ matrix.cc == 'gcc-11' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: include
+        if-no-files-found: error
+        path: include/
 
     - name: make install
       run: |
@@ -71,3 +89,5 @@ jobs:
 
     - name: Run test
       run: python -m unittest discover -s test -p "*test.py"
+    
+    

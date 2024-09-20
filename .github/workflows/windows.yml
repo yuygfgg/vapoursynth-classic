@@ -5,29 +5,21 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   build-msvc:
     runs-on: windows-2019
-    
+
     strategy:
       matrix:
-        #arch: [x86, x64]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         arch: [x64]
-        include:
-          #- arch: x86
-          #  platform: Win32
-          #  bits: 32
-          #  # unable to diagnose this error during `import vapoursynth`
-          #  # ImportError: DLL load failed while importing vapoursynth: A dynamic link library (DLL) initialization routine failed.
-          #  test: false
-          - arch: x64
-            platform: x64
-            bits: 64
-            test: true
+        platform: [x64]
+        bits: [64]
+        test: [true]
 
     steps:
     - uses: actions/checkout@v3
 
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1
-  
+
     - name: Clone Dependencies
       shell: bash
       run: |
@@ -55,117 +47,52 @@ jobs:
         out\msvc-${{matrix.platform}}\Release\mimalloc-override-test.exe
         cd ..
 
-    - name: Setup Python 3.8
+    - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        # Version range or exact version of a Python version to use, using SemVer's version range syntax.
-        python-version: 3.8
-        # The target architecture (x86, x64) of the Python interpreter.
+        python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.arch }}
 
-    - name: Install Python 3.8 cython and Save Path
+    - name: Install cython and Save Path
       shell: bash
       run: |
-        py -3.8-${{ matrix.bits }} -m pip install --upgrade pip
-        py -3.8-${{ matrix.bits }} -m pip install cython setuptools wheel
-        echo "PYTHON38_DIR=$pythonLocation" >> $GITHUB_ENV
+        py -${{ matrix.python-version }}-${{ matrix.bits }} -m pip install --upgrade pip
+        py -${{ matrix.python-version }}-${{ matrix.bits }} -m pip install cython setuptools wheel
+        echo "PYTHON_DIR=$pythonLocation" >> $GITHUB_ENV
 
-    - name: Setup Python 3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.9
-        architecture: ${{ matrix.arch }}
-
-    - name: Install Python 3.9 cython and Save Path
-      shell: bash
+    - name: Patch Python Include Paths
+      shell: powershell
       run: |
-        py -3.9-${{ matrix.bits }} -m pip install --upgrade pip
-        py -3.9-${{ matrix.bits }} -m pip install cython setuptools wheel
-        echo "PYTHON39_DIR=$pythonLocation" >> $GITHUB_ENV
-
-    - name: Patch Python 3.9 Include Paths
-      run: |
-        $py_include_path = ((Split-Path -Path (Get-Command python.exe).Path) + "\include" )
-        $py_binary_path = ((Split-Path -Path (Get-Command python.exe).Path) + "\libs" )
-        (Get-Content -Path "msvc_project\VSScript\VSScript.vcxproj" -Raw) -replace "C:\\Program Files %28x86%29\\Python39-32\\libs",$py_binary_path | Set-Content "msvc_project\VSScript\VSScript.vcxproj"
-        (Get-Content -Path "msvc_project\VSScript\VSScript.vcxproj" -Raw) -replace "C:\\Program Files %28x86%29\\Python39-32\\include",$py_include_path | Set-Content "msvc_project\VSScript\VSScript.vcxproj"
-        (Get-Content -Path "msvc_project\VSScript\VSScript.vcxproj" -Raw) -replace "C:\\Program Files\\Python39\\libs",$py_binary_path | Set-Content "msvc_project\VSScript\VSScript.vcxproj"
-        (Get-Content -Path "msvc_project\VSScript\VSScript.vcxproj" -Raw) -replace "C:\\Program Files\\Python39\\include",$py_include_path | Set-Content "msvc_project\VSScript\VSScript.vcxproj"
-
-    - name: Setup Python 3.10
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-        architecture: ${{ matrix.arch }}
-
-    - name: Install Python 3.10 cython and Save Path
-      shell: bash
-      run: |
-        py -3.10-${{ matrix.bits }} -m pip install --upgrade pip
-        py -3.10-${{ matrix.bits }} -m pip install cython setuptools wheel
-        echo "PYTHON310_DIR=$pythonLocation" >> $GITHUB_ENV
-
-    - name: Setup Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        architecture: ${{ matrix.arch }}
-
-    - name: Install Python 3.11 cython and Save Path
-      shell: bash
-      run: |
-        py -3.11-${{ matrix.bits }} -m pip install --upgrade pip
-        py -3.11-${{ matrix.bits }} -m pip install cython setuptools wheel
-        echo "PYTHON311_DIR=$pythonLocation" >> $GITHUB_ENV
-
-    - name: Setup Python 3.12
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-        architecture: ${{ matrix.arch }}
-
-    - name: Install Python 3.12 cython and Save Path
-      shell: bash
-      run: |
-        py -3.12-${{ matrix.bits }} -m pip install --upgrade pip
-        py -3.12-${{ matrix.bits }} -m pip install cython setuptools wheel
-        echo "PYTHON312_DIR=$pythonLocation" >> $GITHUB_ENV
+        $py_include_path = (Join-Path (Split-Path -Path (Get-Command python.exe).Path) "include")
+        $py_binary_path = (Join-Path (Split-Path -Path (Get-Command python.exe).Path) "libs")
+        $project_file = "msvc_project\VSScript\VSScript.vcxproj"
+        (Get-Content -Path $project_file -Raw) -replace "C:\\Program Files %28x86%29\\Python[0-9.-]*\\libs",$py_binary_path | Set-Content $project_file
+        (Get-Content -Path $project_file -Raw) -replace "C:\\Program Files %28x86%29\\Python[0-9.-]*\\include",$py_include_path | Set-Content $project_file
+        (Get-Content -Path $project_file -Raw) -replace "C:\\Program Files\\Python[0-9.-]*\\libs",$py_binary_path | Set-Content $project_file
+        (Get-Content -Path $project_file -Raw) -replace "C:\\Program Files\\Python[0-9.-]*\\include",$py_include_path | Set-Content $project_file
 
     - name: Compile VS
       run: |
-        msbuild msvc_project/VapourSynth.sln /t:Build /p:Configuration=Release /p:Platform=${{ matrix.platform }}        
-    - name: Build Python 3.12 plugin
+        msbuild msvc_project/VapourSynth.sln /t:Build /p:Configuration=Release /p:Platform=${{ matrix.platform }}
+
+    - name: Build Python plugin
       run: |
-        py -3.12-${{ matrix.bits }} -m pip install . --no-deps -v
-    - name: Build Python 3.11 plugin
-      run: |
-        py -3.11-${{ matrix.bits }} -m pip install . --no-deps -v
-    - name: Build Python 3.10 plugin
-      run: |
-        py -3.10-${{ matrix.bits }} -m pip install . --no-deps -v
-    - name: Build Python 3.9 plugin
-      run: |
-        py -3.9-${{ matrix.bits }} -m pip install . --no-deps -v
-    - name: Build Python 3.8 plugin
-      run: |
-        py -3.8-${{ matrix.bits }} -m pip install . --no-deps -v
+        py -${{ matrix.python-version }}-${{ matrix.bits }} -m pip install . --no-deps -v
+
     - name: Build installer
+      shell: powershell
       run: |
         pushd installer
         $env:SKIP_COMPRESS="no"
         $env:SKIP_WAIT="yes"
         & ".\make portable.bat"
-        
+
         if ("${{ matrix.arch }}" -eq "x64") {
-          pushd buildp64
+          pushd "buildp${{ matrix.bits }}"
         } else {
-          pushd buildp32
+          pushd "buildp32"
         }
-        py -3.12-${{ matrix.bits }} -m pip install . --no-deps -v
-        py -3.11-${{ matrix.bits }} -m pip install . --no-deps -v
-        py -3.10-${{ matrix.bits }} -m pip install . --no-deps -v
-        py -3.9-${{ matrix.bits }} -m pip install . --no-deps -v
-        py -3.8-${{ matrix.bits }} -m pip install . --no-deps -v
+        py -${{ matrix.python-version }}-${{ matrix.bits }} -m pip install . --no-deps -v
         popd
         popd
 
@@ -174,36 +101,22 @@ jobs:
       run: |
         bits=${{ matrix.bits }}
         arch=${{ matrix.arch }}
-        cp "$PYTHON312_DIR"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
-        cp "$PYTHON311_DIR"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
-        cp "$PYTHON310_DIR"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
-        cp "$PYTHON39_DIR"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
-        cp "$PYTHON38_DIR"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
+        cp "$PYTHON_DIR"/Lib/site-packages/vapoursynth*.pyd installer/buildp$bits
         7z a -t7z -mx=3 ../build.7z .
         mv ../*.7z .
         mv installer/buildp$bits upload
+
     - name: Upload build artifact
+      if: ${{ matrix.python-version == '3.12' }}
       uses: actions/upload-artifact@v3
       with:
-        name: build-${{matrix.arch}}
+        name: build-${{ matrix.arch }}-py${{ matrix.python-version }}
         if-no-files-found: error
         path: build.7z
 
-    - name: Run test for Python 3.12
+    - name: Run test
       if: ${{ matrix.test }}
-      run: py -3.12-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
-    - name: Run test for Python 3.11
-      if: ${{ matrix.test }}
-      run: py -3.11-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
-    - name: Run test for Python 3.10
-      if: ${{ matrix.test }}
-      run: py -3.10-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
-    - name: Run test for Python 3.9
-      if: ${{ matrix.test }}
-      run: py -3.9-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
-    - name: Run test for Python 3.8
-      if: ${{ matrix.test }}
-      run: py -3.8-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
+      run: py -${{ matrix.python-version }}-${{ matrix.bits }} -m unittest discover -s test -p "*test.py"
 
     - name: Install sphinx
       run: |
@@ -224,7 +137,8 @@ jobs:
     - name: Setup VC commands
       uses: ilammy/msvc-dev-cmd@v1
       with:
-        arch: ${{matrix.platform}}
+        arch: ${{ matrix.platform }}
+
     - name: Copy VC Runtime Libraries
       shell: bash
       run: |
@@ -249,7 +163,41 @@ jobs:
     - name: Upload release artifact
       uses: actions/upload-artifact@v3
       with:
-        name: release-${{matrix.arch}}
+        name: release-${{ matrix.arch }}-py${{ matrix.python-version }}
         if-no-files-found: error
         path: |
           upload/
+  
+  organize-release:
+    runs-on: ubuntu-latest
+    needs: build-msvc
+    steps:
+    - name: Download all build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: release
+        
+    - name: Remove duplicate files by filename
+      shell: bash
+      run: |
+        pushd release
+        rm -rf build-x64-py3.12
+        ls -1 | awk '{
+          if (seen[$0]++ == 0) {
+            print $0
+          } else {
+            rm $0
+          }
+        }'
+        popd
+        
+    - name: Compress all releases
+      shell: bash
+      run: |
+        tar -czvf full_release.tar.gz -C release .
+        
+    - name: Upload final release artifact
+      uses: actions/upload-artifact@v3
+      with:
+       name: full_release
+       path: full_release.tar.gz

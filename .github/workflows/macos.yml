@@ -33,7 +33,7 @@ jobs:
         rm -rf zimg
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         # Version range or exact version of a Python version to use, using SemVer's version range syntax.
         python-version: 3.9

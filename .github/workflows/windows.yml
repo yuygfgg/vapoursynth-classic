@@ -48,7 +48,7 @@ jobs:
         cd ..
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.arch }}
@@ -108,7 +108,7 @@ jobs:
 
     - name: Upload build artifact
       if: ${{ matrix.python-version == '3.12' }}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-${{ matrix.arch }}-py${{ matrix.python-version }}
         if-no-files-found: error

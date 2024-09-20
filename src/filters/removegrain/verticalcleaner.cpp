@@ -1,4 +1,5 @@
 #include "shared.h"
+#include <omp.h>
 
 struct VerticalCleanerData {
     VSNode * node;
@@ -14,6 +15,7 @@ static void verticalMedian(const T * VS_RESTRICT srcp, T * VS_RESTRICT dstp, con
     dstp += stride;
 
     for (int y = 1; y < height - 1; y++) {
+        #pragma omp simd
         for (int x = 0; x < width; x++) {
             const T up = srcp[x - stride];
             const T center = srcp[x];
@@ -38,6 +40,7 @@ static void relaxedVerticalMedian(const T * VS_RESTRICT srcp, T * VS_RESTRICT ds
     dstp += stride * 2;
 
     for (int y = 2; y < height - 2; y++) {
+        #pragma omp simd
         for (int x = 0; x < width; x++) {
             const T p2 = srcp[x - stride * 2];
             const T p1 = srcp[x - stride];

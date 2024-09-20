@@ -59,7 +59,8 @@ const char *vs_cpulevel_to_str(int level) {
         return "";
 #endif
 #ifdef __ARM_NEON__
-    else return "neon";
+    else if (level<=VS_CPU_LEVEL_NEON)
+        return "neon";
 #endif
     return "";
 }

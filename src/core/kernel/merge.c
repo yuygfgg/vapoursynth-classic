@@ -29,7 +29,7 @@
 #    pragma warning(push)
 #    pragma warning(disable:4146)
 #endif
-static uint16_t premul_u8(uint8_t x, uint8_t a, unsigned offset)
+static inline uint16_t premul_u8(uint8_t x, uint8_t a, unsigned offset)
 {
     uint16_t tmp = (uint16_t)x - (uint16_t)offset;
     int sign = (int16_t)tmp < 0;
@@ -40,7 +40,7 @@ static uint16_t premul_u8(uint8_t x, uint8_t a, unsigned offset)
     return tmp;
 }
 
-static uint32_t premul_u16(uint16_t x, uint16_t a, unsigned offset, unsigned depth)
+static inline uint32_t premul_u16(uint16_t x, uint16_t a, unsigned offset, unsigned depth)
 {
     unsigned maxval = (1U << depth) - 1;
     unsigned div = div_table[depth - 9];
@@ -325,6 +325,7 @@ void vs_makefulldiff_byte_word_c(const void *src1, const void *src2, void *dst, 
     uint16_t *dstp = dst;
     unsigned i;
     (void)depth;
+    #pragma omp simd
     for (i = 0; i < n; i++) {
         uint8_t v1 = srcp1[i];
         uint8_t v2 = srcp2[i];

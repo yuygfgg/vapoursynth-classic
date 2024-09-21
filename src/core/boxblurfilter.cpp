@@ -42,6 +42,8 @@ struct BoxBlurData {
 template<typename T>
 static void blurH(const T * VS_RESTRICT src, T * VS_RESTRICT dst, const int width, const int radius, const unsigned div, const unsigned round) {
     unsigned acc = radius * src[0];
+
+    #pragma omp simd reduction(+:acc)
     for (int x = 0; x < radius; x++)
         acc += src[std::min(x, width - 1)];
 
@@ -86,6 +88,8 @@ static void processPlane(const uint8_t *src, uint8_t *dst, ptrdiff_t stride, int
 template<typename T>
 static void blurHF(const T * VS_RESTRICT src, T * VS_RESTRICT dst, const int width, const int radius, const T div) {
     T acc = radius * src[0];
+
+    #pragma omp simd reduction(+:acc)
     for (int x = 0; x < radius; x++)
         acc += src[std::min(x, width - 1)];
 

@@ -52,8 +52,10 @@ jobs:
         ./configure --prefix=/usr
 
     - name: make
-      run: make -j2
-
+      run: |
+        make -j2
+        cp -r .libs libs
+        
     - name: Upload libs (Python 3.13 only)
       if: ${{ matrix.python == '3.13' }}
       uses: actions/upload-artifact@v4

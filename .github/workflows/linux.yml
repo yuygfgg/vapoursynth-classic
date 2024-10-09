@@ -7,19 +7,12 @@ jobs:
     runs-on: ubuntu-24.04
 
     env:
-      CC: ${{ matrix.cc }}
-      CXX: ${{ matrix.cxx }}
+      CC: gcc-14
+      CXX: g++-14
       PYTHON_VERSION: ${{ matrix.python }}
 
     strategy:
       matrix:
-        include:
-          - cc: gcc-12
-            cxx: g++-12
-          - cc: gcc-13
-            cxx: g++-13
-          - cc: gcc-14
-            cxx: g++-14
         python: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
       fail-fast: false
 

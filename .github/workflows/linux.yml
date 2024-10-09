@@ -9,18 +9,18 @@ jobs:
     env:
       CC: ${{ matrix.cc }}
       CXX: ${{ matrix.cxx }}
+      PYTHON_VERSION: ${{ matrix.python }}
 
     strategy:
       matrix:
         include:
-          - cc: gcc-11
-            cxx: g++-11
           - cc: gcc-12
             cxx: g++-12
           - cc: gcc-13
             cxx: g++-13
           - cc: gcc-14
             cxx: g++-14
+        python: [3.8, 3.9, 3.10, 3.11, 3.12, 3.13]
       fail-fast: false
 
     steps:
@@ -43,8 +43,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        # Version range or exact version of a Python version to use, using SemVer's version range syntax.
-        python-version: 3.12
+        python-version: ${{ matrix.python }}
 
     - name: Install cython
       run: |
@@ -61,17 +60,17 @@ jobs:
 
     - name: make
       run: make -j2
-    
-    - name: Upload libs
-      if: ${{ matrix.cc == 'gcc-14' }}
+
+    - name: Upload libs (Python 3.13, GCC 14 only)
+      if: ${{ matrix.cc == 'gcc-14' && matrix.python == '3.13' }}
       uses: actions/upload-artifact@v4
       with:
         name: libs
         if-no-files-found: error
         path: libs/
     
-    - name: Upload includes
-      if: ${{ matrix.cc == 'gcc-14' }}
+    - name: Upload includes (Python 3.13, GCC 14 only)
+      if: ${{ matrix.cc == 'gcc-14' && matrix.python == '3.13' }}
       uses: actions/upload-artifact@v4
       with:
         name: include
@@ -85,5 +84,3 @@ jobs:
 
     - name: Run test
       run: python -m unittest discover -s test -p "*test.py"
-    
-    

@@ -54,16 +54,16 @@ jobs:
     - name: make
       run: make -j2
 
-    - name: Upload libs (Python 3.13, GCC 14 only)
-      if: ${{ matrix.cc == 'gcc-14' && matrix.python == '3.13' }}
+    - name: Upload libs (Python 3.13 only)
+      if: ${{ matrix.python == '3.13' }}
       uses: actions/upload-artifact@v4
       with:
         name: libs
         if-no-files-found: error
         path: libs/
     
-    - name: Upload includes (Python 3.13, GCC 14 only)
-      if: ${{ matrix.cc == 'gcc-14' && matrix.python == '3.13' }}
+    - name: Upload includes (Python 3.13 only)
+      if: ${{ matrix.python == '3.13' }}
       uses: actions/upload-artifact@v4
       with:
         name: include

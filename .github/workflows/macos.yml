@@ -62,7 +62,7 @@ jobs:
         cp -r .libs libs
     
     - name: Upload libs (Python 3.13 only)
-      if: ${{ matrix.python == '3.13' }}
+      if: ${{ matrix.python-version == '3.13' }}
       uses: actions/upload-artifact@v4
       with:
         name: libs
@@ -70,7 +70,7 @@ jobs:
         path: libs/
     
     - name: Upload includes (Python 3.13 only)
-      if: ${{ matrix.python == '3.13' }}
+      if: ${{ matrix.python-version == '3.13' }}
       uses: actions/upload-artifact@v4
       with:
         name: include
